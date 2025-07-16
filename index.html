@@ -1,0 +1,57 @@
+﻿<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gioco Scarabeo</title>
+    <link rel="stylesheet" href="scrabble.css" />
+</head>
+<body>
+    <div class="container">
+
+        <div id="info-bar" style="display: flex; justify-content: space-between; padding: 10px; font-size: 18px; font-weight: bold;">
+            <div id="turns-display">Turni: 7</div>
+            <div id="goal-display">Punteggio da raggiungere: 100</div>
+            <div id="score-display">Punteggio: 0</div>
+        </div>
+        <div id="progress-container">
+            <div id="progress-bar"></div>
+        </div>
+
+        <!-- Spazi per comporre la parola -->
+        <div id="word-slots" class="word-slots">
+            <!-- 12 slot vuoti -->
+            <div class="slot" data-index="0"></div>
+            <div class="slot" data-index="1"></div>
+            <div class="slot" data-index="2"></div>
+            <div class="slot" data-index="3"></div>
+            <div class="slot" data-index="4"></div>
+            <div class="slot" data-index="5"></div>
+            <div class="slot" data-index="6"></div>
+            <div class="slot" data-index="7"></div>
+            <div class="slot" data-index="8"></div>
+            <div class="slot" data-index="9"></div>
+            <div class="slot" data-index="10"></div>
+            <div class="slot" data-index="11"></div>
+        </div>
+
+        <!-- Griglia delle 20 tessere pescate -->
+        <div id="tiles-grid" class="tiles-grid">
+            <!-- Le tessere verranno popolate via JS -->
+        </div>
+
+        <!-- Pulsante per controllare la parola -->
+        <div class="controls">
+            <button id="backspace" title="Annulla ultima lettera">⌫</button>
+            <button id="rimescola" title="Rimescola le lettere">⟳</button>
+            <button id="check-word" title="Controlla parola">></button>
+        </div>
+
+        <!-- Area risultato -->
+        <div id="result" class="result"></div>
+    </div>
+
+    <script src="scrabble.js"></script>
+    <script src="parole.js"></script>
+</body>
+</html>
