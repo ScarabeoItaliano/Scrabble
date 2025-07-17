@@ -31,12 +31,14 @@ let punteggioRound = 0;
 let turniRimasti = 7;
 let turniUsatiQuestoRound = 0;
 let roundPassati = 0;
-const obiettivoIniziale = 1;
+const obiettivoIniziale = 100;
 let obiettivo = obiettivoIniziale;
 let lettereUsateQuestoLivello = 0;
 let scarti = [];
 let parolePerRound = []; // array di array, ogni elemento contiene parole+punti per un round
 let parolaPunteggioMassimo = { parola: "", punteggio: 0 };
+let rimescolaUsato = 0;
+const rimescolaMax = 3;
 
 
 function aggiornaInfoGioco() {
@@ -375,9 +377,30 @@ function rimuoviUltimaLettera() {
 }
 
 function rimescolaTessere() {
+    if (rimescolaUsato >= rimescolaMax) return;
+
     sacchetto.push(...tessereDisponibili);
+    sacchetto.push(...scarti);
+    tessereDisponibili = [];
+    scarti = [];
+
     pescaTessere();
     mostraTessere();
+
+    rimescolaUsato++;
+    document.getElementById("rimescola-counter").textContent = rimescolaMax - rimescolaUsato;
+
+    if (rimescolaUsato >= rimescolaMax) {
+        document.getElementById("rimescola").disabled = true;
+    }
+}
+
+
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
 }
 function salvaPartitaInClassifica(punteggioTotale) {
     let classifica = JSON.parse(localStorage.getItem("classificaPartite")) || [];
@@ -542,7 +565,6 @@ document.getElementById('bonus-triplette-container').addEventListener('click', (
 
     if (tessereBonus.length > 0) {
         tessereBonus.forEach(tessera => sacchetto.push(tessera));
-        alert("Tessere bonus aggiunte al sacchetto!");
     }
 
     document.getElementById('bonus-modal').style.display = 'none';
@@ -558,7 +580,7 @@ document.getElementById("check-word").addEventListener("click", controllaParola)
 document.getElementById("backspace").addEventListener("click", rimuoviUltimaLettera);
 document.getElementById("rimescola").addEventListener("click", rimescolaTessere);
 document.getElementById("restart-game").addEventListener("click", () => {
-    // Reset variabili
+    // Reset variabili di gioco
     punteggioTotale = 0;
     punteggioRound = 0;
     turniRimasti = 7;
@@ -571,6 +593,11 @@ document.getElementById("restart-game").addEventListener("click", () => {
     parolaPunteggioMassimo = { parola: "", punteggio: 0 };
     parolaCostruita = new Array(10).fill(null);
 
+    // Reset rimescolamenti
+    rimescolaUsato = 0;
+    document.getElementById("rimescola-counter").textContent = rimescolaMax;
+    document.getElementById("rimescola").disabled = false;
+
     // Rigenera sacchetto, pesca tessere, aggiorna UI
     generaSacchetto();
     pescaTessere();
@@ -578,14 +605,15 @@ document.getElementById("restart-game").addEventListener("click", () => {
     mostraSlot();
     aggiornaInfoGioco();
 
-    // Nascondi modal
+    // Nascondi modale Game Over
     document.getElementById("game-over-modal").style.display = "none";
 
-    // Riabilita pulsanti
+    // Riabilita pulsanti di gioco
     document.getElementById("check-word").disabled = false;
     document.getElementById("backspace").disabled = false;
     document.getElementById("rimescola").disabled = false;
 });
+
 document.getElementById("show-leaderboard").addEventListener("click", mostraClassifica);
 
 
