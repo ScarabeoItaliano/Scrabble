@@ -9,31 +9,30 @@
 <body>
     <div class="container">
 
-        <div id="info-bar" style="display: flex; justify-content: space-between; padding: 10px; font-size: 18px; font-weight: bold;">
+        <div id="info-bar" class="info-box">
             <div id="turns-display">Turni: 7</div>
-            <div id="goal-display">Punteggio da raggiungere: 100</div>
+            <div id="goal-display">Punteggio da raggiungere: 0 / 100</div>
             <div id="score-display">Punteggio: 0</div>
         </div>
         <div id="progress-container">
             <div id="progress-bar"></div>
         </div>
 
+
         <!-- Spazi per comporre la parola -->
         <div id="word-slots" class="word-slots">
-            <!-- 12 slot vuoti -->
             <div class="slot" data-index="0"></div>
             <div class="slot" data-index="1"></div>
             <div class="slot" data-index="2"></div>
-            <div class="slot" data-index="3"></div>
+            <div class="slot" data-index="3">+2</div>
             <div class="slot" data-index="4"></div>
-            <div class="slot" data-index="5"></div>
+            <div class="slot" data-index="5">*2</div>
             <div class="slot" data-index="6"></div>
-            <div class="slot" data-index="7"></div>
+            <div class="slot" data-index="7">+5</div>
             <div class="slot" data-index="8"></div>
-            <div class="slot" data-index="9"></div>
-            <div class="slot" data-index="10"></div>
-            <div class="slot" data-index="11"></div>
+            <div class="slot" data-index="9">x5</div>
         </div>
+
 
         <!-- Griglia delle 20 tessere pescate -->
         <div id="tiles-grid" class="tiles-grid">
@@ -50,6 +49,43 @@
         <!-- Area risultato -->
         <div id="result" class="result"></div>
     </div>
+
+    <div id="game-over-modal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <h2>Partita terminata</h2>
+            <div id="summary"></div>
+            <button id="restart-game" class="game-button">Ricomincia</button>
+            <button id="show-leaderboard" class="game-button orange-button">Classifica</button>
+            <div id="leaderboard" style="display:none; margin-top: 15px;"></div> <!-- contenitore classifica -->
+        </div>
+    </div>
+    <!-- Modale bonus obiettivo -->
+    <div id="bonus-modal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <h2>🎉 Obiettivo raggiunto!</h2>
+            <p id="bonus-message"></p>
+            <p>Vuoi aggiungere tessere bonus al sacchetto?</p>
+
+            <div id="bonus-triplette-container" style="display: flex; flex-direction: column; gap: 15px; align-items: center; margin: 20px 0;">
+                <div class="triplette-group" style="display: flex; gap: 10px;">
+                    <div class="bonus-tile-slot tile" style="display: flex; align-items: center; justify-content: center;"></div>
+                    <div class="bonus-tile-slot tile" style="display: flex; align-items: center; justify-content: center;"></div>
+                    <div class="bonus-tile-slot tile" style="display: flex; align-items: center; justify-content: center;"></div>
+                </div>
+                <div class="triplette-group" style="display: flex; gap: 10px;">
+                    <div class="bonus-tile-slot tile" style="display: flex; align-items: center; justify-content: center;"></div>
+                    <div class="bonus-tile-slot tile" style="display: flex; align-items: center; justify-content: center;"></div>
+                    <div class="bonus-tile-slot tile" style="display: flex; align-items: center; justify-content: center;"></div>
+                </div>
+                <div class="triplette-group" style="display: flex; gap: 10px;">
+                    <div class="bonus-tile-slot tile" style="display: flex; align-items: center; justify-content: center;"></div>
+                    <div class="bonus-tile-slot tile" style="display: flex; align-items: center; justify-content: center;"></div>
+                    <div class="bonus-tile-slot tile" style="display: flex; align-items: center; justify-content: center;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
     <script src="scrabble.js"></script>
     <script src="parole.js"></script>
