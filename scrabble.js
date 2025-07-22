@@ -39,6 +39,9 @@ let parolePerRound = []; // array di array, ogni elemento contiene parole+punti 
 let parolaPunteggioMassimo = { parola: "", punteggio: 0 };
 let rimescolaUsato = 0;
 const rimescolaMax = 3;
+let sogliaProssimoTurnoBonus = 5000;
+let turniPerRound = 7; // Numero di turni per round
+
 
 
 function aggiornaInfoGioco() {
@@ -176,7 +179,7 @@ function getParolaDaSlot() {
 function calcolaPunteggio() {
     let sommaLettere = 0;
     let lettereUsate = 0;
-    let sommaMoltiplicatori = 0;
+    let sommaMoltiplicatori = 1;
 
     parolaCostruita.forEach((elem, i) => {
         if (!elem) return;
@@ -191,7 +194,7 @@ function calcolaPunteggio() {
             punti = LETTERE[lettera]?.punteggio || 0;
 
             if (tessera.tipoBonus === 'moltiplicatore') {
-                sommaMoltiplicatori += tessera.moltiplicatore || 1;
+                sommaMoltiplicatori += tessera.moltiplicatore-1 || 1;
             } else if (tessera.tipoBonus === 'additivo') {
                 punti = tessera.valore || punti;
             }
@@ -231,6 +234,7 @@ function controllaParola() {
 
     if (parole.includes(parola.toLowerCase())) {
         const punteggio = calcolaPunteggio(parola);
+        salvaParolaAlta(parola, punteggio); // Salva parola con punteggio massimo)
         lettereUsateQuestoLivello += parola.length;
         punteggioTotale += punteggio;
         punteggioRound += punteggio;
@@ -264,14 +268,21 @@ function controllaParola() {
 
             punteggioTotale += bonus;
 
+            // 🔁 Ogni 5000 punti totali, aggiungi un turno permanente per i round futuri
+            while (punteggioTotale >= sogliaProssimoTurnoBonus) {
+                turniPerRound++; // aumentiamo i turni di base del round
+                sogliaProssimoTurnoBonus += 5000;
+                console.log(`✨ Turno bonus sbloccato! Ora ogni round ha ${turniPerRound} turni.`);
+            }
+
             // Nuova logica obiettivo
             obiettivo = obiettivo + (roundPassati * 15);
 
             risultato.innerHTML += `<br>🎯 Obiettivo del round raggiunto!<br>Bonus: <strong>${bonus}</strong> punti`;
             apriBonusModal(bonus, obiettivo);
 
-
             reintegraScarti();
+
             parolaCostruita.forEach(item => {
                 if (item && sacchetto.length > 0) {
                     const nuovaIndex = Math.floor(Math.random() * sacchetto.length);
@@ -279,7 +290,8 @@ function controllaParola() {
                 }
             });
 
-            turniRimasti = 7;
+            // ⏱ Imposta i turni per il nuovo round in base ai bonus guadagnati
+            turniRimasti = turniPerRound;
             punteggioRound = 0;
             lettereUsateQuestoLivello = 0;
             turniUsatiQuestoRound = 0;
@@ -291,6 +303,7 @@ function controllaParola() {
             mostraTessere();
             return;
         }
+
 
         if (turniRimasti === 0) {
             risultato.innerHTML += punteggioRound >= obiettivo
@@ -395,6 +408,23 @@ function rimescolaTessere() {
     }
 }
 
+function salvaParolaAlta(parola, punteggio) {
+    let paroleSalvate = JSON.parse(localStorage.getItem("paroleTop")) || [];
+
+    const dataSoloGiorno = new Date().toISOString().split('T')[0];
+
+    paroleSalvate.push({
+        parola: parola,
+        punteggio: punteggio,
+        data: dataSoloGiorno
+    });
+
+    // Ordina per punteggio decrescente e tieni solo le top 15
+    paroleSalvate.sort((a, b) => b.punteggio - a.punteggio);
+    paroleSalvate = paroleSalvate.slice(0, 15);
+
+    localStorage.setItem("paroleTop", JSON.stringify(paroleSalvate));
+}
 
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
@@ -421,26 +451,26 @@ function salvaPartitaInClassifica(punteggioTotale) {
 
 function mostraClassifica() {
     const classifica = JSON.parse(localStorage.getItem("classificaPartite")) || [];
-
-    if (classifica.length === 0) {
-        alert("Nessuna partita salvata in classifica.");
-        return;
-    }
+    const paroleTop = JSON.parse(localStorage.getItem("paroleTop")) || [];
 
     let html = `<h2>Classifica migliori 15 partite</h2><ol>`;
     classifica.forEach(({ punteggio, data }) => {
-        // Converte la stringa "YYYY-MM-DD" in oggetto Date
-        const dataObj = new Date(data);
-        // Formatta la data solo con giorno, mese e anno in formato locale
-        const dataLocale = dataObj.toLocaleDateString();
-
+        const dataLocale = new Date(data).toLocaleDateString();
         html += `<li>Punteggio: <strong>${punteggio}</strong> - Data: ${dataLocale}</li>`;
+    });
+    html += `</ol>`;
+
+    html += `<hr><h2>Top 15 parole con punteggio più alto</h2><ol>`;
+    paroleTop.forEach(({ parola, punteggio, data }) => {
+        const dataLocale = new Date(data).toLocaleDateString();
+        html += `<li><strong>${parola}</strong> - ${punteggio} punti - ${dataLocale}</li>`;
     });
     html += `</ol>`;
 
     document.getElementById("summary").innerHTML = html;
     document.getElementById("game-over-modal").style.display = "flex";
 }
+
 
 
 function salvaPunteggioMassimo() {
@@ -457,7 +487,7 @@ function generaTesseraBonus() {
 
     const tipoCasuale = Math.random();
 
-    if (tipoCasuale < 0.80) {
+    if (tipoCasuale < 0.85) {
         const bonus = Math.floor(Math.random() * 5) + 1;
         return {
             lettera,
@@ -465,7 +495,7 @@ function generaTesseraBonus() {
             tipoBonus: 'additivo',
         };
     } else {
-        const moltiplicatore = tipoCasuale < 0.925 ? 2 : 3;
+        const moltiplicatore = tipoCasuale < 0.95 ? 2 : 3;
         return {
             lettera,
             valore: valoreBase, // non moltiplicato qui!
@@ -615,6 +645,10 @@ document.getElementById("restart-game").addEventListener("click", () => {
 });
 
 document.getElementById("show-leaderboard").addEventListener("click", mostraClassifica);
+document.getElementById("chiudi").addEventListener("click", () => {
+    document.getElementById("game-over-modal").style.display = "none";
+});
+
 
 
 

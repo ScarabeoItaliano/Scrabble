@@ -271,7 +271,8 @@ h1 {
     border: none;
     border-radius: 25px;
     cursor: pointer;
-    transition: background-color 0.3s ease;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.25);
+    transition: transform 0.2s ease;
     color: white;
     background-color: #007BFF; /* esempio colore blu per Ricomincia */
 }
@@ -290,7 +291,12 @@ h1 {
     .orange-button:hover {
         background-color: #e67300; /* arancione scuro */
     }
-
+    .red-button{
+        background-color: #f44336; /* rosso vivo */
+    }
+    .red-button:hover {
+        background-color: #d32f2f; /* rosso scuro */
+    }
 
 /* 📱 Responsive */
 @media (max-width: 600px) {
