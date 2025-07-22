@@ -421,7 +421,7 @@ function salvaParolaAlta(parola, punteggio) {
 
     // Ordina per punteggio decrescente e tieni solo le top 15
     paroleSalvate.sort((a, b) => b.punteggio - a.punteggio);
-    paroleSalvate = paroleSalvate.slice(0, 15);
+    paroleSalvate = paroleSalvate.slice(0, 50);
 
     localStorage.setItem("paroleTop", JSON.stringify(paroleSalvate));
 }
