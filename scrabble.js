@@ -157,7 +157,7 @@ function pescaSoloVuotiConControllo() {
     console.log("Tentativo unico:", nuoveTessere.map(t => typeof t === "string" ? t : t.lettera).join(", "));
     console.log(`→ Vocali: ${vocali}, Consonanti: ${consonanti}`);
 
-    if (vocali > 1 && consonanti > 1) {
+    if (vocali > 2 && consonanti > 2) {
         console.log("✅ Set valido trovato. Applico le modifiche.");
         // Applica davvero le nuove tessere
         parolaCostruita.forEach(item => {
