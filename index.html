@@ -58,11 +58,12 @@
             <h2>Partita terminata</h2>
             <div id="summary"></div>
             <button id="restart-game" class="game-button">Ricomincia</button>
-            <button id="show-leaderboard" class="game-button orange-button">Classifica</button>
+            <button id="show-leaderboard-summary" class="game-button orange-button">Classifica</button>
             <button id="chiudi" class="game-button red-button">Chiudi</button>
             <div id="leaderboard" style="display:none; margin-top: 15px;"></div> <!-- contenitore classifica -->
         </div>
     </div>
+
     <!-- Modale bonus obiettivo -->
     <div id="bonus-modal" class="modal" style="display:none;">
         <div class="modal-content">
@@ -87,9 +88,19 @@
                     <div class="bonus-tile-slot tile" style="display: flex; align-items: center; justify-content: center;"></div>
                 </div>
             </div>
+            <div id="sacchetto-stats" style="margin-top: 16px;"></div>
         </div>
     </div>
 
+
+    <div id="leaderboard-modal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <h2>Classifica</h2>
+            <div id="leaderboard-content"></div>
+            <button id="reset-leaderboard" class="game-button black-button">Azzera Classifica</button>
+            <button id="close-leaderboard" class="game-button red-button">Chiudi</button>
+        </div>
+    </div>
 
     <script src="scrabble.js"></script>
     <script src="parole.js"></script>

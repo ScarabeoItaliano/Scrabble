@@ -7,7 +7,7 @@ const LETTERE = {
     E: { quantità: 11, punteggio: 1 },
     F: { quantità: 3, punteggio: 5 },
     G: { quantità: 2, punteggio: 8 },
-    H: { quantità: 2, punteggio: 8 },
+    H: { quantità: 1, punteggio: 8 },
     I: { quantità: 12, punteggio: 1 },
     L: { quantità: 5, punteggio: 3 },
     M: { quantità: 5, punteggio: 3 },
@@ -31,7 +31,7 @@ let punteggioRound = 0;
 let turniRimasti = 7;
 let turniUsatiQuestoRound = 0;
 let roundPassati = 0;
-const obiettivoIniziale = 100;
+const obiettivoIniziale = 1;
 let obiettivo = obiettivoIniziale;
 let lettereUsateQuestoLivello = 0;
 let scarti = [];
@@ -96,19 +96,71 @@ function mostraSlot() {
 }
 
 
+function contaDistribuzione(tessere) {
+    const vocali = ["A", "E", "I", "O", "U"];
+    let contaVocali = 0;
+    let contaConsonanti = 0;
 
-function pescaTessere() {
-    reintegraScarti();
+    tessere.forEach(tessera => {
+        const lettera = typeof tessera === "string" ? tessera : tessera.lettera;
+        if (!lettera) return;
+
+        if (vocali.includes(lettera)) {
+            contaVocali++;
+        } else {
+            contaConsonanti++;
+        }
+    });
+
+    return { vocali: contaVocali, consonanti: contaConsonanti };
+}
+
+
+function pescaTessere(isAutomatic = false) {
+    if (!isAutomatic) reintegraScarti();
 
     tessereDisponibili = [];
-    for (let i = 0; i < 16; i++) {
-        if (sacchetto.length === 0) break;
 
+    for (let i = 0; i < 16 && sacchetto.length > 0; i++) {
         const index = Math.floor(Math.random() * sacchetto.length);
         const lettera = sacchetto.splice(index, 1)[0];
         tessereDisponibili.push(lettera);
     }
+
+    console.log("🎲 Nuove tessere pescate:", tessereDisponibili.map(t => typeof t === "string" ? t : t.lettera).join(", "));
 }
+
+
+function pescaSoloVuotiConControllo() {
+    const nuoveTessere = [...tessereDisponibili]; // copia per simulazione
+
+    parolaCostruita.forEach(item => {
+        if (item && sacchetto.length > 0) {
+            const nuovaIndex = Math.floor(Math.random() * sacchetto.length);
+            nuoveTessere[item.indiceTessera] = sacchetto[nuovaIndex];
+        }
+    });
+
+    const { vocali, consonanti } = contaDistribuzione(nuoveTessere);
+    console.log("Tentativo unico:", nuoveTessere.map(t => typeof t === "string" ? t : t.lettera).join(", "));
+    console.log(`→ Vocali: ${vocali}, Consonanti: ${consonanti}`);
+
+    if (vocali > 1 && consonanti > 1) {
+        console.log("✅ Set valido trovato. Applico le modifiche.");
+        // Applica davvero le nuove tessere
+        parolaCostruita.forEach(item => {
+            if (item && sacchetto.length > 0) {
+                const nuovaIndex = Math.floor(Math.random() * sacchetto.length);
+                tessereDisponibili[item.indiceTessera] = sacchetto.splice(nuovaIndex, 1)[0];
+            }
+        });
+    } else {
+        console.warn("❌ Set non valido. Attivazione rimescolo automatico.");
+        alert(`⚠️ Combinazione sfortunata: solo ${vocali} vocale/i e ${consonanti} consonante/i. Le tessere verranno rimescolate.`);
+        rimescolaTessereAutomatico();
+    }
+}
+
 
 function mostraTessere() {
     const griglia = document.getElementById("tiles-grid");
@@ -158,7 +210,6 @@ function mostraTessere() {
         griglia.appendChild(div);
     });
 }
-
 
 function inserisciLettera(lettera, indiceTessera, elementoDiv) {
     if (parolaCostruita.some(p => p?.indiceTessera === indiceTessera)) return;
@@ -269,26 +320,28 @@ function controllaParola() {
             punteggioTotale += bonus;
 
             // 🔁 Ogni 5000 punti totali, aggiungi un turno permanente per i round futuri
+            // 🔁 Controlla se hai guadagnato almeno un turno extra in questo round
+            const turniPrima = turniPerRound;
             while (punteggioTotale >= sogliaProssimoTurnoBonus) {
-                turniPerRound++; // aumentiamo i turni di base del round
-                sogliaProssimoTurnoBonus += 5000;
-                console.log(`✨ Turno bonus sbloccato! Ora ogni round ha ${turniPerRound} turni.`);
+                turniPerRound++;
+
+                const incremento = 5000 + (turniPerRound - 8) * 1000;
+                sogliaProssimoTurnoBonus += incremento;
             }
 
-            // Nuova logica obiettivo
+            const turnoBonusSbloccato = turniPerRound > turniPrima;
+
+            // Nuovo obiettivo per il round successivo
             obiettivo = obiettivo + (roundPassati * 15);
 
-            risultato.innerHTML += `<br>🎯 Obiettivo del round raggiunto!<br>Bonus: <strong>${bonus}</strong> punti`;
-            apriBonusModal(bonus, obiettivo);
+            // Apri la modale bonus con il messaggio aggiornato
+            apriBonusModal(bonus, obiettivo, turnoBonusSbloccato);
+
 
             reintegraScarti();
 
-            parolaCostruita.forEach(item => {
-                if (item && sacchetto.length > 0) {
-                    const nuovaIndex = Math.floor(Math.random() * sacchetto.length);
-                    tessereDisponibili[item.indiceTessera] = sacchetto.splice(nuovaIndex, 1)[0];
-                }
-            });
+            pescaSoloVuotiConControllo();
+
 
             // ⏱ Imposta i turni per il nuovo round in base ai bonus guadagnati
             turniRimasti = turniPerRound;
@@ -316,12 +369,8 @@ function controllaParola() {
         aggiornaInfoGioco();
 
         reintegraScarti();
-        parolaCostruita.forEach(item => {
-            if (item && sacchetto.length > 0) {
-                const nuovaIndex = Math.floor(Math.random() * sacchetto.length);
-                tessereDisponibili[item.indiceTessera] = sacchetto.splice(nuovaIndex, 1)[0];
-            }
-        });
+        pescaSoloVuotiConControllo();
+
 
         parolaCostruita = new Array(10).fill(null);
         mostraTessere();
@@ -407,16 +456,37 @@ function rimescolaTessere() {
         document.getElementById("rimescola").disabled = true;
     }
 }
+function rimescolaTessereAutomatico() {
+    // Rimetti solo le tessere attuali nel sacchetto
+    sacchetto.push(...tessereDisponibili);
+    tessereDisponibili = [];
+
+    // NON reintegra gli scarti!
+
+    pescaTessere(true); // passiamo un flag per dire che è automatico
+    mostraTessere();
+}
 
 function salvaParolaAlta(parola, punteggio) {
     let paroleSalvate = JSON.parse(localStorage.getItem("paroleTop")) || [];
 
-    const dataSoloGiorno = new Date().toISOString().split('T')[0];
+    const bonusUsati = parolaCostruita.map((slot, i) => {
+        if (!slot) return null;
+        const tessera = tessereDisponibili[slot.indiceTessera];
+        if (typeof tessera === 'object' && tessera !== null) {
+            if (tessera.tipoBonus === 'additivo') {
+                return `+${tessera.valore}`;
+            } else if (tessera.tipoBonus === 'moltiplicatore') {
+                return `x${tessera.moltiplicatore}`;
+            }
+        }
+        return null;
+    }).filter(b => b !== null);
 
     paroleSalvate.push({
         parola: parola,
         punteggio: punteggio,
-        data: dataSoloGiorno
+        bonus: bonusUsati.length > 0 ? bonusUsati : ["No Bonus"]
     });
 
     // Ordina per punteggio decrescente e tieni solo le top 15
@@ -425,6 +495,7 @@ function salvaParolaAlta(parola, punteggio) {
 
     localStorage.setItem("paroleTop", JSON.stringify(paroleSalvate));
 }
+
 
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
@@ -453,23 +524,24 @@ function mostraClassifica() {
     const classifica = JSON.parse(localStorage.getItem("classificaPartite")) || [];
     const paroleTop = JSON.parse(localStorage.getItem("paroleTop")) || [];
 
-    let html = `<h2>Classifica migliori 15 partite</h2><ol>`;
+    let html = `<h3>📊 Migliori 15 Partite</h3><ol>`;
     classifica.forEach(({ punteggio, data }) => {
         const dataLocale = new Date(data).toLocaleDateString();
-        html += `<li>Punteggio: <strong>${punteggio}</strong> - Data: ${dataLocale}</li>`;
+        html += `<li><strong>${punteggio}</strong> punti - ${dataLocale}</li>`;
     });
     html += `</ol>`;
 
-    html += `<hr><h2>Top 15 parole con punteggio più alto</h2><ol>`;
-    paroleTop.forEach(({ parola, punteggio, data }) => {
-        const dataLocale = new Date(data).toLocaleDateString();
-        html += `<li><strong>${parola}</strong> - ${punteggio} punti - ${dataLocale}</li>`;
+    html += `<hr><h3>🔠 Top 50 Parole</h3><ol>`;
+    paroleTop.forEach(({ parola, punteggio, bonus }) => {
+        const bonusText = bonus ? `(${bonus.join(", ")})` : "No Bonus";
+        html += `<li><strong>${parola}</strong> - ${punteggio} punti ${bonusText}</li>`;
     });
     html += `</ol>`;
 
-    document.getElementById("summary").innerHTML = html;
-    document.getElementById("game-over-modal").style.display = "flex";
+    document.getElementById("leaderboard-content").innerHTML = html;
+    document.getElementById("leaderboard-modal").style.display = "flex";
 }
+
 
 
 
@@ -508,13 +580,26 @@ function generaTesseraBonus() {
 
 
 
-function apriBonusModal(bonus, obiettivo) {
+function apriBonusModal(bonus, obiettivo, turnoBonusSbloccato = false) {
     const modal = document.getElementById("bonus-modal");
     const messaggio = document.getElementById("bonus-message");
-    messaggio.innerHTML = `🎯 Obiettivo del round raggiunto!<br>Bonus: <strong>${bonus}</strong> punti<br>🚀 Prossimo obiettivo: <strong>${obiettivo}</strong>`;
+
+    let html = `🎯 Obiettivo del round raggiunto!<br>Bonus: <strong>${bonus}</strong> punti<br>🚀 Prossimo obiettivo: <strong>${obiettivo}</strong>`;
+
+    if (turnoBonusSbloccato) {
+        html += `<br>➕ Hai guadagnato un <strong>turno extra</strong> per ogni round! 🎁`;
+    }
+
+    html += `<br>📈 Prossimo turno bonus a <strong>${sogliaProssimoTurnoBonus}</strong> punti totali`;
+
+    messaggio.innerHTML = html;
     modal.style.display = "flex";
+
     riempiGrigliaBonus();
+    mostraRiepilogoSacchetto(); // ✅ nuova chiamata
 }
+
+
 
 function riempiGrigliaBonus() {
     const caselle = document.querySelectorAll("#bonus-triplette-container .bonus-tile-slot");
@@ -551,6 +636,61 @@ function riempiGrigliaBonus() {
         slot.appendChild(bonusSpan);
     });
 }
+
+function mostraRiepilogoSacchetto() {
+    const container = document.getElementById("sacchetto-stats");
+    if (!container) return;
+
+    // Conta le lettere nel sacchetto
+    const conteggio = {};
+    sacchetto.forEach(lettera => {
+        const simbolo = typeof lettera === "string" ? lettera : lettera.lettera;
+        conteggio[simbolo] = (conteggio[simbolo] || 0) + 1;
+    });
+
+    const vocali = ['A', 'E', 'I', 'O', 'U'];
+    const vocaliPresenti = vocali.filter(v => conteggio[v]);
+    const consonantiPresenti = Object.keys(conteggio).filter(l => !vocali.includes(l));
+
+    const sommaVocali = vocali.reduce((acc, v) => acc + (conteggio[v] || 0), 0);
+    const sommaConsonanti = consonantiPresenti.reduce((acc, c) => acc + conteggio[c], 0);
+
+    // Funzione per suddividere un array in chunks di max n elementi
+    function chunkArray(arr, size) {
+        const result = [];
+        for (let i = 0; i < arr.length; i += size) {
+            result.push(arr.slice(i, i + size));
+        }
+        return result;
+    }
+
+    // Divido le consonanti in 2 gruppi
+    const consonantiChunked = chunkArray(consonantiPresenti.sort(), Math.ceil(consonantiPresenti.length / 2));
+
+    let html = `<div class="sacchetto-colonna">`;
+    html += `<h4>🔤 Vocali (${sommaVocali})</h4><ul>`;
+    vocali.forEach(v => {
+        if (conteggio[v]) html += `<li>${v}: ${conteggio[v]}</li>`;
+    });
+    html += `</ul></div>`;
+
+    html += `<div class="sacchetto-colonna consonanti-container">`;
+    html += `<h4>🧱 Consonanti (${sommaConsonanti})</h4>`;
+    html += `<div class="consonanti-lists">`;  // wrapper per colonne
+    consonantiChunked.forEach(chunk => {
+        html += `<ul>`;
+        chunk.forEach(c => {
+            html += `<li>${c}: ${conteggio[c]}</li>`;
+        });
+        html += `</ul>`;
+    });
+    html += `</div>`;
+    html += `</div>`;
+
+    container.innerHTML = `<div class="sacchetto-riepilogo">${html}</div>`;
+}
+
+
 
 // Delegazione: intercetta click ovunque nel container delle triplette
 document.getElementById('bonus-triplette-container').addEventListener('click', (event) => {
@@ -628,11 +768,11 @@ document.getElementById("restart-game").addEventListener("click", () => {
     document.getElementById("rimescola-counter").textContent = rimescolaMax;
     document.getElementById("rimescola").disabled = false;
 
-    // Rigenera sacchetto, pesca tessere, aggiorna UI
+    // *** RESET UI E LOGICA DI GIOCO ***
     generaSacchetto();
+    mostraSlot();
     pescaTessere();
     mostraTessere();
-    mostraSlot();
     aggiornaInfoGioco();
 
     // Nascondi modale Game Over
@@ -642,13 +782,59 @@ document.getElementById("restart-game").addEventListener("click", () => {
     document.getElementById("check-word").disabled = false;
     document.getElementById("backspace").disabled = false;
     document.getElementById("rimescola").disabled = false;
+
+    // Eventuale pulizia slot parola visiva
+    document.querySelectorAll("#word-slots .slot").forEach(slot => {
+        slot.textContent = ""; // svuota visivamente gli slot
+        slot.classList.remove("selected"); // se usi classi selezione
+    });
+
+    // Pulisci messaggi risultato o altri elementi UI
+    document.getElementById("result").textContent = "";
 });
 
-document.getElementById("show-leaderboard").addEventListener("click", mostraClassifica);
+
+document.getElementById("show-leaderboard").addEventListener("click", () => {
+    mostraClassifica(); // mostra la modale separata
+});
+
+document.getElementById("show-leaderboard-summary").addEventListener("click", () => {
+    const classifica = JSON.parse(localStorage.getItem("classificaPartite")) || [];
+    const paroleTop = JSON.parse(localStorage.getItem("paroleTop")) || [];
+
+    let html = `<h3>📊 Migliori 15 Partite</h3><ol>`;
+    classifica.forEach(({ punteggio, data }) => {
+        const dataLocale = new Date(data).toLocaleDateString();
+        html += `<li><strong>${punteggio}</strong> punti - ${dataLocale}</li>`;
+    });
+    html += `</ol>`;
+
+    html += `<hr><h3>🔠 Top 50 Parole</h3><ol>`;
+    paroleTop.forEach(({ parola, punteggio, bonus }) => {
+        const bonusText = bonus ? `(${bonus.join(", ")})` : "";
+        html += `<li><strong>${parola}</strong> - ${punteggio} punti ${bonusText}</li>`;
+    });
+    html += `</ol>`;
+
+    document.getElementById("leaderboard").innerHTML = html;
+    document.getElementById("leaderboard").style.display = "block";
+});
+
+
 document.getElementById("chiudi").addEventListener("click", () => {
     document.getElementById("game-over-modal").style.display = "none";
 });
+document.getElementById("close-leaderboard").addEventListener("click", () => {
+    document.getElementById("leaderboard-modal").style.display = "none";
+});
 
+document.getElementById("reset-leaderboard").addEventListener("click", () => {
+    if (confirm("Sei sicuro di voler azzerare la classifica?")) {
+        localStorage.removeItem("classificaPartite");
+        localStorage.removeItem("paroleTop");
+        mostraClassifica(); // ricarica contenuto vuoto
+    }
+});
 
 
 
