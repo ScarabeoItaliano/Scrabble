@@ -935,7 +935,7 @@ function aggiornaInterfacciaDaStato() {
     aggiornaInfoGioco();
 
     // Aggiorna contatore rimescoli
-    document.getElementById("rimescola-counter").textContent = rimescolaMax - rimescolaUsato;
+    document.getElementById("rimescola").textContent = rimescolaMax - rimescolaUsato;
 
     // Disabilita pulsante se esauriti
     document.getElementById("rimescola").disabled = rimescolaUsato >= rimescolaMax;
