@@ -348,6 +348,17 @@ h1 {
         min-width: 80px;
     }
 
+#classifica-list,
+#paroleTop-list {
+    padding-left: 10px;
+    margin-left: 10px;
+}
+
+    #classifica-list li,
+    #parole-top-list li {
+        margin-bottom: 4px;
+    }
+
 
 /* 📱 Responsive */
 @media (max-width: 600px) {

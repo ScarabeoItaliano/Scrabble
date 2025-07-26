@@ -42,6 +42,18 @@ const rimescolaMax = 3;
 let sogliaProssimoTurnoBonus = 5000;
 let turniPerRound = 7; // Numero di turni per round
 
+window.addEventListener("load", () => {
+    const statoSalvato = localStorage.getItem("statoPartita");
+    if (statoSalvato && confirm("È stata trovata una partita salvata. Vuoi caricarla?")) {
+        caricaStatoPartita();
+    } else {
+        generaSacchetto();
+        mostraSlot();
+        pescaTessere();
+        mostraTessere();
+        aggiornaInfoGioco();
+    }
+});
 
 
 function aggiornaInfoGioco() {
@@ -379,19 +391,40 @@ function controllaParola() {
         risultato.innerHTML = `❌ <strong>${parola}</strong> non è una parola valida.`;
         risultato.className = "error";
     }
-
+    salvaStatoPartita();
     console.log(`📦 Sacchetto attuale: ${sacchetto.length} lettere`);
 }
 
 
 function mostraRiepilogoPartita() {
-    salvaPartitaInClassifica(punteggioTotale);
-    salvaPunteggioMassimo();
     const puntiTotali = punteggioTotale;
     const rounds = roundPassati;
     const parolaMax = parolaPunteggioMassimo.parola || "-";
     const punteggioMax = parolaPunteggioMassimo.punteggio || 0;
 
+    // ⏺️ Prepara dati da salvare
+    const partita = {
+        id: Date.now(), // 👈 genera ID univoco basato sul timestamp
+        timestamp: new Date().toISOString(),
+        punteggioTotale: puntiTotali,
+        roundSuperati: rounds,
+        parolaTop: parolaMax,
+        puntiTop: punteggioMax,
+        dettagliRound: parolePerRound.map((parole, i) => ({
+            round: i + 1,
+            parole: parole.map(p => ({ parola: p.parola, punti: p.punteggio }))
+        }))
+    };
+
+
+    // 💾 Salva nel localStorage
+    let classifica = JSON.parse(localStorage.getItem("classifica")) || [];
+    classifica.push(partita);
+    classifica.sort((a, b) => b.punteggioTotale - a.punteggioTotale);
+    classifica = classifica.slice(0, 15); // Mantieni solo i 15 migliori
+    localStorage.setItem("classifica", JSON.stringify(classifica));
+
+    // 🖼️ Riepilogo visivo
     let riepilogoHTML = `
         <p><strong>Punti totali:</strong> ${puntiTotali}</p>
         <p><strong>Round superati:</strong> ${rounds}</p>
@@ -412,9 +445,6 @@ function mostraRiepilogoPartita() {
     document.getElementById("game-over-modal").style.display = "flex";
     document.getElementById("leaderboard").style.display = "none";
 }
-
-
-
 
 function disabilitaGioco() {
     document.querySelectorAll(".tile").forEach(t => t.replaceWith(t.cloneNode(true)));
@@ -521,29 +551,65 @@ function salvaPartitaInClassifica(punteggioTotale) {
 }
 
 function mostraClassifica() {
-    const classifica = JSON.parse(localStorage.getItem("classificaPartite")) || [];
+    const classifica = JSON.parse(localStorage.getItem("classifica")) || [];
     const paroleTop = JSON.parse(localStorage.getItem("paroleTop")) || [];
 
-    let html = `<h3>📊 Migliori 15 Partite</h3><ol>`;
-    classifica.forEach(({ punteggio, data }) => {
-        const dataLocale = new Date(data).toLocaleDateString();
-        html += `<li><strong>${punteggio}</strong> punti - ${dataLocale}</li>`;
+    let html = `<h3>📊 Migliori 15 Partite</h3><ol id="classifica-list">`;
+    classifica.forEach(({ punteggioTotale, timestamp, id, roundSuperati }) => {
+        const dataLocale = new Date(timestamp).toLocaleDateString();
+        html += `<li data-id="${id}" class="classifica-voce" style="cursor:pointer;">
+                    <strong>${punteggioTotale}</strong> punti - ${dataLocale} <em>(round: ${roundSuperati})</em>
+                </li>`;
     });
     html += `</ol>`;
 
-    html += `<hr><h3>🔠 Top 50 Parole</h3><ol>`;
+    html += `<hr><h3>🔠 Top 50 Parole</h3><ol id="paroleTop-list">`;
     paroleTop.forEach(({ parola, punteggio, bonus }) => {
         const bonusText = bonus ? `(${bonus.join(", ")})` : "No Bonus";
         html += `<li><strong>${parola}</strong> - ${punteggio} punti ${bonusText}</li>`;
     });
     html += `</ol>`;
 
+    // Dettaglio partita selezionata
+    html += `<div id="dettaglio-partita" style="margin-top:20px;"></div>`;
+
     document.getElementById("leaderboard-content").innerHTML = html;
     document.getElementById("leaderboard-modal").style.display = "flex";
+
+    // Aggiungi event listener alle voci cliccabili
+    document.querySelectorAll(".classifica-voce").forEach(li => {
+        li.addEventListener("click", () => {
+            const id = parseInt(li.getAttribute("data-id"));
+            const partita = classifica.find(p => p.id === id);
+            if (!partita) return;
+
+            mostraDettaglioPartita(partita);
+        });
+    });
 }
 
+function mostraDettaglioPartita(partita) {
+    const container = document.getElementById("dettaglio-partita");
+    if (!container || !partita) return;
 
+    let html = `
+        <hr><h4>📋 Dettagli partita</h4>
+        <p><strong>Punteggio totale:</strong> ${partita.punteggioTotale}</p>
+        <p><strong>Round superati:</strong> ${partita.roundSuperati}</p>
+        <p><strong>Parola migliore:</strong> ${partita.parolaTop} (${partita.puntiTop} punti)</p>
+        <h5>🧩 Dettagli per round:</h5>
+    `;
 
+    partita.dettagliRound.forEach(r => {
+        html += `<p><strong>Round ${r.round}:</strong></p><ul>`;
+        r.parole.forEach(p => {
+            html += `<li>${p.parola} - ${p.punti} punti</li>`;
+        });
+        html += `</ul>`;
+    });
+
+    container.innerHTML = html;
+}
 
 function salvaPunteggioMassimo() {
     const punteggioMaxSalvato = localStorage.getItem("punteggioMassimo") || 0;
@@ -750,49 +816,17 @@ document.getElementById("check-word").addEventListener("click", controllaParola)
 document.getElementById("backspace").addEventListener("click", rimuoviUltimaLettera);
 document.getElementById("rimescola").addEventListener("click", rimescolaTessere);
 document.getElementById("restart-game").addEventListener("click", () => {
-    // Reset variabili di gioco
-    punteggioTotale = 0;
-    punteggioRound = 0;
-    turniRimasti = 7;
-    turniUsatiQuestoRound = 0;
-    roundPassati = 0;
-    obiettivo = obiettivoIniziale;
-    lettereUsateQuestoLivello = 0;
-    scarti = [];
-    parolePerRound = [];
-    parolaPunteggioMassimo = { parola: "", punteggio: 0 };
-    parolaCostruita = new Array(10).fill(null);
-
-    // Reset rimescolamenti
-    rimescolaUsato = 0;
-    document.getElementById("rimescola-counter").textContent = rimescolaMax;
-    document.getElementById("rimescola").disabled = false;
-
-    // *** RESET UI E LOGICA DI GIOCO ***
-    generaSacchetto();
-    mostraSlot();
-    pescaTessere();
-    mostraTessere();
-    aggiornaInfoGioco();
-
-    // Nascondi modale Game Over
-    document.getElementById("game-over-modal").style.display = "none";
-
-    // Riabilita pulsanti di gioco
-    document.getElementById("check-word").disabled = false;
-    document.getElementById("backspace").disabled = false;
-    document.getElementById("rimescola").disabled = false;
-
-    // Eventuale pulizia slot parola visiva
-    document.querySelectorAll("#word-slots .slot").forEach(slot => {
-        slot.textContent = ""; // svuota visivamente gli slot
-        slot.classList.remove("selected"); // se usi classi selezione
-    });
-
-    // Pulisci messaggi risultato o altri elementi UI
-    document.getElementById("result").textContent = "";
+    if (confirm("Sei sicuro di voler riavviare la partita?")) {
+        localStorage.removeItem("statoPartita");
+        location.reload();  // oppure chiama la funzione per iniziare una nuova partita
+    }
 });
-
+document.getElementById("restart-game-header").addEventListener("click", () => {
+    if (confirm("Sei sicuro di voler riavviare la partita?")) {
+        localStorage.removeItem("statoPartita");
+        location.reload();  // o qui chiami la funzione per ricominciare senza ricaricare
+    }
+});
 
 document.getElementById("show-leaderboard").addEventListener("click", () => {
     mostraClassifica(); // mostra la modale separata
@@ -831,18 +865,11 @@ document.getElementById("close-leaderboard").addEventListener("click", () => {
 document.getElementById("reset-leaderboard").addEventListener("click", () => {
     if (confirm("Sei sicuro di voler azzerare la classifica?")) {
         localStorage.removeItem("classificaPartite");
+        localStorage.removeItem("classifica");       // ✅ aggiornata
         localStorage.removeItem("paroleTop");
         mostraClassifica(); // ricarica contenuto vuoto
     }
 });
-
-
-
-generaSacchetto();
-mostraSlot();
-pescaTessere();
-mostraTessere();
-aggiornaInfoGioco();
 
 function stampaSacchetto() {
     console.log("Contenuto sacchetto:");
@@ -850,3 +877,64 @@ function stampaSacchetto() {
         console.log(`Tessera ${index + 1}: Letter: ${tessera.lettera}, Valore: ${tessera.valore}`);
     });
 }
+
+function salvaStatoPartita() {
+    const stato = {
+        roundPassati,
+        punteggioTotale,
+        parolePerRound,
+        parolaPunteggioMassimo,
+        sacchetto,
+        tessereDisponibili,       // <-- aggiungi questa riga
+        parolaCostruita,
+        punteggioRound,
+        turniRimasti,
+        turniUsatiQuestoRound,
+        obiettivo,
+        lettereUsateQuestoLivello,
+        scarti,
+        rimescolaUsato,
+        sogliaProssimoTurnoBonus,
+        turniPerRound
+        // aggiungi tutte le variabili che vuoi mantenere
+    };
+    localStorage.setItem("statoPartita", JSON.stringify(stato));
+}
+
+function caricaStatoPartita() {
+    const statoJSON = localStorage.getItem("statoPartita");
+    if (!statoJSON) return false; // niente partita salvata
+
+    const stato = JSON.parse(statoJSON);
+
+    roundPassati = stato.roundPassati;
+    punteggioTotale = stato.punteggioTotale;
+    parolePerRound = stato.parolePerRound;
+    parolaPunteggioMassimo = stato.parolaPunteggioMassimo;
+    sacchetto = stato.sacchetto;
+    tessereDisponibili = stato.tessereDisponibili || [];
+    parolaCostruita = stato.parolaCostruita || new Array(10).fill(null);
+    punteggioRound = stato.punteggioRound || 0;
+    turniRimasti = stato.turniRimasti || 0;
+    turniUsatiQuestoRound = stato.turniUsatiQuestoRound || 0;
+    obiettivo = stato.obiettivo || obiettivoIniziale;
+    lettereUsateQuestoLivello = stato.lettereUsateQuestoLivello || 0;
+    scarti = stato.scarti || [];
+    rimescolaUsato = stato.rimescolaUsato || 0;
+    sogliaProssimoTurnoBonus = stato.sogliaProssimoTurnoBonus || 5000;
+    turniPerRound = stato.turniPerRound || 7;
+
+    aggiornaInterfacciaDaStato();
+
+    return true;
+}
+
+function aggiornaInterfacciaDaStato() {
+    aggiornaInfoGioco();     // Aggiorna punteggi, round, turni, obiettivo
+    mostraTessere();         // Mostra le tessere attuali (quelle in tessereDisponibili)
+    mostraSlot();            // Mostra le lettere nei slot (parolaCostruita)
+    // Se usi altre funzioni di UI per sacchetto, scarti ecc, aggiornale qui
+
+    console.log("Interfaccia aggiornata dallo stato salvato.");
+}
+
