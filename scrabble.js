@@ -930,11 +930,15 @@ function caricaStatoPartita() {
 }
 
 function aggiornaInterfacciaDaStato() {
-    aggiornaInfoGioco();     // Aggiorna punteggi, round, turni, obiettivo
-    mostraTessere();         // Mostra le tessere attuali (quelle in tessereDisponibili)
-    mostraSlot();            // Mostra le lettere nei slot (parolaCostruita)
-    // Se usi altre funzioni di UI per sacchetto, scarti ecc, aggiornale qui
+    mostraSlot();
+    mostraTessere();
+    aggiornaInfoGioco();
 
-    console.log("Interfaccia aggiornata dallo stato salvato.");
+    // Aggiorna contatore rimescoli
+    document.getElementById("rimescola-counter").textContent = rimescolaMax - rimescolaUsato;
+
+    // Disabilita pulsante se esauriti
+    document.getElementById("rimescola").disabled = rimescolaUsato >= rimescolaMax;
 }
+
 
