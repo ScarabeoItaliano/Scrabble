@@ -337,7 +337,7 @@ function controllaParola() {
             while (punteggioTotale >= sogliaProssimoTurnoBonus) {
                 turniPerRound++;
 
-                const incremento = 5000 + (turniPerRound - 8) * 1000;
+                const incremento = 5000 + (turniPerRound - 7) * 1000;
                 sogliaProssimoTurnoBonus += incremento;
             }
 
