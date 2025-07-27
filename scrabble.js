@@ -144,34 +144,29 @@ function pescaTessere(isAutomatic = false) {
 
 
 function pescaSoloVuotiConControllo() {
-    const nuoveTessere = [...tessereDisponibili]; // copia per simulazione
-
+    // Sostituisci le tessere usate con lettere dal sacchetto
     parolaCostruita.forEach(item => {
         if (item && sacchetto.length > 0) {
             const nuovaIndex = Math.floor(Math.random() * sacchetto.length);
-            nuoveTessere[item.indiceTessera] = sacchetto[nuovaIndex];
+            tessereDisponibili[item.indiceTessera] = sacchetto.splice(nuovaIndex, 1)[0];
         }
     });
 
-    const { vocali, consonanti } = contaDistribuzione(nuoveTessere);
-    console.log("Tentativo unico:", nuoveTessere.map(t => typeof t === "string" ? t : t.lettera).join(", "));
+    // Ora che le tessere sono state effettivamente sostituite, controlla tutta la distribuzione
+    const { vocali, consonanti } = contaDistribuzione(tessereDisponibili);
+    console.log("Set attuale:", tessereDisponibili.map(t => typeof t === "string" ? t : t.lettera).join(", "));
     console.log(`→ Vocali: ${vocali}, Consonanti: ${consonanti}`);
 
-    if (vocali > 2 && consonanti > 2) {
-        console.log("✅ Set valido trovato. Applico le modifiche.");
-        // Applica davvero le nuove tessere
-        parolaCostruita.forEach(item => {
-            if (item && sacchetto.length > 0) {
-                const nuovaIndex = Math.floor(Math.random() * sacchetto.length);
-                tessereDisponibili[item.indiceTessera] = sacchetto.splice(nuovaIndex, 1)[0];
-            }
-        });
-    } else {
-        console.warn("❌ Set non valido. Attivazione rimescolo automatico.");
+    // Verifica se la combinazione è bilanciata (almeno 3 vocali e 3 consonanti)
+    if (vocali < 3 || consonanti < 3) {
+        console.warn("❌ Distribuzione non valida. Attivazione rimescolo automatico.");
         alert(`⚠️ Combinazione sfortunata: solo ${vocali} vocale/i e ${consonanti} consonante/i. Le tessere verranno rimescolate.`);
         rimescolaTessereAutomatico();
+    } else {
+        console.log("✅ Distribuzione valida. Nessun rimescolo necessario.");
     }
 }
+
 
 
 function mostraTessere() {
@@ -257,7 +252,7 @@ function calcolaPunteggio() {
             punti = LETTERE[lettera]?.punteggio || 0;
 
             if (tessera.tipoBonus === 'moltiplicatore') {
-                sommaMoltiplicatori += tessera.moltiplicatore-1 || 1;
+                sommaMoltiplicatori += tessera.moltiplicatore - 1 || 1;
             } else if (tessera.tipoBonus === 'additivo') {
                 punti = tessera.valore || punti;
             }
@@ -855,7 +850,7 @@ document.getElementById("show-leaderboard-summary").addEventListener("click", ()
 });
 
 
-document.getElementById("chiudi").addEventListener("click", () => {
+document.getElementById("close-leaderboard").addEventListener("click", () => {
     document.getElementById("game-over-modal").style.display = "none";
 });
 document.getElementById("close-leaderboard").addEventListener("click", () => {
@@ -940,5 +935,3 @@ function aggiornaInterfacciaDaStato() {
     // Disabilita pulsante se esauriti
     document.getElementById("rimescola").disabled = rimescolaUsato >= rimescolaMax;
 }
-
-
