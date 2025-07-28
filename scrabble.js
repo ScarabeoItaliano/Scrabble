@@ -92,20 +92,20 @@ function impostaDifficolta(d) {
 
     switch (difficolta) {
         case "medio":
-            base = 60;
-            sogliaProssimoTurnoBonus = 60;
-            incrementoSogliaTurno = 15;
+            base = 6000;
+            sogliaProssimoTurnoBonus = 6000;
+            incrementoSogliaTurno = 1500;
             break;
         case "difficile":
-            base = 70;
-            sogliaProssimoTurnoBonus = 70;
-            incrementoSogliaTurno = 20;
+            base = 7000;
+            sogliaProssimoTurnoBonus = 7000;
+            incrementoSogliaTurno = 2000;
             break;
         case "facile":
         default:
-            base = 50;
-            sogliaProssimoTurnoBonus = 50;
-            incrementoSogliaTurno = 10;
+            base = 5000;
+            sogliaProssimoTurnoBonus = 5000;
+            incrementoSogliaTurno = 1000;
             break;
     }
 
@@ -1185,12 +1185,12 @@ function generaSoglieBonus(difficolta) {
 
     switch (difficolta) {
         case "medio":
-            base = 60000; incrementoBase = 1500; turniIniziali = 7; break;
+            base = 6000; incrementoBase = 1500; turniIniziali = 7; break;
         case "difficile":
             base = 7000; incrementoBase = 2000; turniIniziali = 7; break;
         case "facile":
         default:
-            base = 5000; incrementoBase = 100; turniIniziali = 7; break;
+            base = 5000; incrementoBase = 1000; turniIniziali = 7; break;
     }
 
     let soglie = [];
