@@ -36,25 +36,87 @@ let obiettivo = obiettivoIniziale;
 let lettereUsateQuestoLivello = 0;
 let scarti = [];
 let parolePerRound = []; // array di array, ogni elemento contiene parole+punti per un round
-let parolaPunteggioMassimo = { parola: "", punteggio: 0 };
+let parolaPunteggioMassimo = {
+    parola: "",
+    punteggio: 0
+};
 let rimescolaUsato = 0;
 const rimescolaMax = 3;
 let sogliaProssimoTurnoBonus = 5000;
 let turniPerRound = 7; // Numero di turni per round
+let difficolta = "facile";
+let incrementoSogliaTurno = 1000;
+
 
 window.addEventListener("load", () => {
     const statoSalvato = localStorage.getItem("statoPartita");
     if (statoSalvato && confirm("È stata trovata una partita salvata. Vuoi caricarla?")) {
         caricaStatoPartita();
     } else {
-        generaSacchetto();
-        mostraSlot();
-        pescaTessere();
-        mostraTessere();
-        aggiornaInfoGioco();
+        // Mostra selezione difficoltà SOLO se non carichi la partita
+        mostraSelezioneDifficolta();
     }
 });
 
+function avviaNuovaPartita() {
+    roundPassati = 0;
+    punteggioTotale = 0;
+    parolePerRound = [];
+    parolaPunteggioMassimo = {parola: "", punteggio: 0};
+    sacchetto = []; // poi riempito da generaSacchetto
+    tessereDisponibili = [];
+    parolaCostruita = new Array(10).fill(null);
+    punteggioRound = 0;
+    turniUsatiQuestoRound = 0;
+    turniRimasti = turniPerRound = 7;
+    obiettivo = obiettivoIniziale;
+    lettereUsateQuestoLivello = 0;
+    scarti = [];
+    rimescolaUsato = 0;
+
+    generaSacchetto();
+    mostraSlot();
+    pescaTessere();
+    mostraTessere();
+    aggiornaInfoGioco();
+    aggiornaRimescolaBtn();
+}
+
+function impostaDifficolta(d) {
+    difficolta = d;
+
+    switch (difficolta) {
+        case "medio":
+            sogliaProssimoTurnoBonus = 6000;
+            incrementoSogliaTurno = 1500;
+            break;
+        case "difficile":
+            sogliaProssimoTurnoBonus = 7000;
+            incrementoSogliaTurno = 2000;
+            break;
+        case "facile":
+        default:
+            sogliaProssimoTurnoBonus = 5000;
+            incrementoSogliaTurno = 1000;
+            break;
+    }
+
+    // 👇 Nascondi la modale
+    document.getElementById("difficulty-modal").style.display = "none";
+
+    // 👇 Avvia nuova partita
+    avviaNuovaPartita();
+}
+
+
+
+function getIncrementoObiettivo(round) {
+    switch (difficolta) {
+        case "medio": return round * 20;
+        case "difficile": return round * 25;
+        default: return round * 15;
+    }
+}
 
 function aggiornaInfoGioco() {
     document.getElementById("score-display").textContent = `Punteggio: ${punteggioTotale}`;
@@ -63,6 +125,20 @@ function aggiornaInfoGioco() {
 
     const progressPercent = Math.min(100, (punteggioRound / obiettivo) * 100);
     document.getElementById("progress-bar").style.width = `${progressPercent}%`;
+}
+
+function aggiornaRimescolaBtn() {
+    const rimescolaBtn = document.getElementById("rimescola");
+    let counterSpan = document.getElementById("rimescola-counter");
+
+    if (!counterSpan) {
+        counterSpan = document.createElement("span");
+        counterSpan.id = "rimescola-counter";
+        rimescolaBtn.appendChild(counterSpan);
+    }
+
+    counterSpan.textContent = rimescolaMax - rimescolaUsato;
+    rimescolaBtn.disabled = rimescolaUsato >= rimescolaMax;
 }
 
 function reintegraScarti() {
@@ -331,15 +407,13 @@ function controllaParola() {
             const turniPrima = turniPerRound;
             while (punteggioTotale >= sogliaProssimoTurnoBonus) {
                 turniPerRound++;
-
-                const incremento = 5000 + (turniPerRound - 7) * 1000;
-                sogliaProssimoTurnoBonus += incremento;
+                sogliaProssimoTurnoBonus += incrementoSogliaTurno;
             }
 
             const turnoBonusSbloccato = turniPerRound > turniPrima;
 
             // Nuovo obiettivo per il round successivo
-            obiettivo = obiettivo + (roundPassati * 15);
+            obiettivo += getIncrementoObiettivo(roundPassati);
 
             // Apri la modale bonus con il messaggio aggiornato
             apriBonusModal(bonus, obiettivo, turnoBonusSbloccato);
@@ -369,7 +443,6 @@ function controllaParola() {
             risultato.innerHTML += punteggioRound >= obiettivo
                 ? "<br>🎉 Obiettivo del round raggiunto! Hai vinto!"
                 : "<br>❌ Obiettivo non raggiunto. Ritenta!";
-            disabilitaGioco();
             mostraRiepilogoPartita();
         }
 
@@ -392,6 +465,7 @@ function controllaParola() {
 
 
 function mostraRiepilogoPartita() {
+    salvaPartitaInClassifica(punteggioTotale, difficolta);
     const puntiTotali = punteggioTotale;
     const rounds = roundPassati;
     const parolaMax = parolaPunteggioMassimo.parola || "-";
@@ -399,27 +473,19 @@ function mostraRiepilogoPartita() {
 
     // ⏺️ Prepara dati da salvare
     const partita = {
-        id: Date.now(), // 👈 genera ID univoco basato sul timestamp
+        id: Date.now(),
         timestamp: new Date().toISOString(),
         punteggioTotale: puntiTotali,
         roundSuperati: rounds,
         parolaTop: parolaMax,
         puntiTop: punteggioMax,
+        difficolta: difficolta, // 👈 aggiunto qui
         dettagliRound: parolePerRound.map((parole, i) => ({
             round: i + 1,
             parole: parole.map(p => ({ parola: p.parola, punti: p.punteggio }))
         }))
     };
-
-
-    // 💾 Salva nel localStorage
-    let classifica = JSON.parse(localStorage.getItem("classifica")) || [];
-    classifica.push(partita);
-    classifica.sort((a, b) => b.punteggioTotale - a.punteggioTotale);
-    classifica = classifica.slice(0, 15); // Mantieni solo i 15 migliori
-    localStorage.setItem("classifica", JSON.stringify(classifica));
-
-    // 🖼️ Riepilogo visivo
+    // Mostra riepilogo visivamente nel modal
     let riepilogoHTML = `
         <p><strong>Punti totali:</strong> ${puntiTotali}</p>
         <p><strong>Round superati:</strong> ${rounds}</p>
@@ -428,10 +494,10 @@ function mostraRiepilogoPartita() {
         <h3>Dettaglio round:</h3>
     `;
 
-    parolePerRound.forEach((paroleRound, index) => {
-        riepilogoHTML += `<p><strong>Round ${index + 1}:</strong></p><ul>`;
-        paroleRound.forEach(({ parola, punteggio }) => {
-            riepilogoHTML += `<li>${parola} - ${punteggio} punti</li>`;
+    partita.dettagliRound.forEach((r, i) => {
+        riepilogoHTML += `<p><strong>Round ${r.round}:</strong></p><ul>`;
+        r.parole.forEach(p => {
+            riepilogoHTML += `<li>${p.parola} - ${p.punti} punti</li>`;
         });
         riepilogoHTML += `</ul>`;
     });
@@ -439,58 +505,206 @@ function mostraRiepilogoPartita() {
     document.getElementById("summary").innerHTML = riepilogoHTML;
     document.getElementById("game-over-modal").style.display = "flex";
     document.getElementById("leaderboard").style.display = "none";
+
+}
+function salvaPartitaInClassifica(punteggioTotale, difficolta) {
+    let classifica = JSON.parse(localStorage.getItem("classificaPartite")) || [];
+
+    const dataSoloGiorno = new Date().toISOString().split('T')[0];
+
+    const nuovaPartita = {
+        id: Date.now(),
+        timestamp: new Date().toISOString(),
+        data: dataSoloGiorno,
+        punteggioTotale,
+        roundSuperati: roundPassati,
+        parolaTop: parolaPunteggioMassimo.parola || "-",
+        puntiTop: parolaPunteggioMassimo.punteggio || 0,
+        difficolta,
+        dettagliRound: parolePerRound.map((parole, i) => ({
+            round: i + 1,
+            parole: parole.map(p => ({ parola: p.parola, punti: p.punteggio }))
+        }))
+    };
+
+    classifica.push(nuovaPartita);
+
+    classifica.sort((a, b) => b.punteggioTotale - a.punteggioTotale);
+    classifica = classifica.slice(0, 15);
+
+    localStorage.setItem("classificaPartite", JSON.stringify(classifica));
 }
 
-function disabilitaGioco() {
-    document.querySelectorAll(".tile").forEach(t => t.replaceWith(t.cloneNode(true)));
-    document.getElementById("check-word").disabled = true;
-    document.getElementById("backspace").disabled = true;
-    document.getElementById("rimescola").disabled = true;
-}
 
-function rimuoviUltimaLettera() {
-    const lastIndex = parolaCostruita
-        .map((el, idx) => ({ el, idx }))
-        .filter(obj => obj.el !== null)
-        .map(obj => obj.idx)
-        .pop();
+function mostraClassifica() {
+    let classifica = JSON.parse(localStorage.getItem("classificaPartite")) || [];
 
-    if (lastIndex !== undefined) {
-        parolaCostruita[lastIndex] = null;
-        const slot = document.querySelector(`.slot[data-index='${lastIndex}']`);
-        if (slot) slot.textContent = "";
-        mostraTessere();
+    let modificato = false;
+    classifica.forEach(p => {
+        if (!p.hasOwnProperty("id")) {
+            p.id = Date.now() + Math.floor(Math.random() * 10000);
+            modificato = true;
+        }
+        if (!p.hasOwnProperty("punteggioTotale") && p.punteggio !== undefined) {
+            p.punteggioTotale = p.punteggio;
+            modificato = true;
+        }
+        if (!p.hasOwnProperty("parolaTop")) {
+            p.parolaTop = "-";
+            p.puntiTop = 0;
+            modificato = true;
+        }
+    });
+
+    if (modificato) {
+        localStorage.setItem("classificaPartite", JSON.stringify(classifica));
     }
-}
 
-function rimescolaTessere() {
-    if (rimescolaUsato >= rimescolaMax) return;
+    // Filtro solo partite con difficoltà valida
+    const difficoltaValide = ["facile", "medio", "difficile"];
+    classifica = classifica.filter(p => difficoltaValide.includes(p.difficolta));
 
-    sacchetto.push(...tessereDisponibili);
-    sacchetto.push(...scarti);
-    tessereDisponibili = [];
-    scarti = [];
+    const classificaFacile = classifica
+        .filter(p => p.difficolta === "facile")
+        .sort((a, b) => b.punteggioTotale - a.punteggioTotale)
+        .slice(0, 10);
 
-    pescaTessere();
-    mostraTessere();
+    const classificaMedia = classifica
+        .filter(p => p.difficolta === "medio")
+        .sort((a, b) => b.punteggioTotale - a.punteggioTotale)
+        .slice(0, 10);
 
-    rimescolaUsato++;
-    document.getElementById("rimescola-counter").textContent = rimescolaMax - rimescolaUsato;
+    const classificaDifficile = classifica
+        .filter(p => p.difficolta === "difficile")
+        .sort((a, b) => b.punteggioTotale - a.punteggioTotale)
+        .slice(0, 10);
 
-    if (rimescolaUsato >= rimescolaMax) {
-        document.getElementById("rimescola").disabled = true;
+    let html = `<h3>📊 Classifica Facile - Top 10</h3><ol id="classifica-facile">`;
+    classificaFacile.forEach(({ id, punteggioTotale, timestamp, roundSuperati }) => {
+        const dataPartita = timestamp ? new Date(timestamp).toLocaleDateString() : "-";
+        const roundTesto = roundSuperati !== undefined ? `round:${roundSuperati}` : "";
+        html += `<li data-id="${id}" class="classifica-voce" style="cursor:pointer;">
+                <strong>${punteggioTotale}</strong> punti - ${dataPartita} - ${roundTesto}
+             </li>`;
+    });
+    html += `</ol>`;
+
+    html += `<h3>📊 Classifica Medio - Top 10</h3><ol id="classifica-medio">`;
+    classificaMedia.forEach(({ id, punteggioTotale, timestamp, roundSuperati }) => {
+        const dataPartita = timestamp ? new Date(timestamp).toLocaleDateString() : "-";
+        const roundTesto = roundSuperati !== undefined ? `round:${roundSuperati}` : "";
+        html += `<li data-id="${id}" class="classifica-voce" style="cursor:pointer;">
+                <strong>${punteggioTotale}</strong> punti - ${dataPartita} - ${roundTesto}
+             </li>`;
+    });
+    html += `</ol>`;
+
+    html += `<h3>📊 Classifica Difficile - Top 10</h3><ol id="classifica-difficile">`;
+    classificaDifficile.forEach(({ id, punteggioTotale, timestamp, roundSuperati }) => {
+        const dataPartita = timestamp ? new Date(timestamp).toLocaleDateString() : "-";
+        const roundTesto = roundSuperati !== undefined ? `round:${roundSuperati}` : "";
+        html += `<li data-id="${id}" class="classifica-voce" style="cursor:pointer;">
+                <strong>${punteggioTotale}</strong> punti - ${dataPartita} - ${roundTesto}
+             </li>`;
+    });
+    html += `</ol>`;
+
+    // Sezione parole top (solo prime 10 inizialmente)
+    const paroleTop = JSON.parse(localStorage.getItem("paroleTop")) || [];
+    let paroleLimitate = paroleTop.slice(0, 10);
+
+    html += `<hr><h3>🔠 Top parole</h3><ol id="paroleTop-list">`;
+    paroleLimitate.forEach(({ parola, punteggio, bonus }) => {
+        const bonusText = bonus ? `(${bonus.join(", ")})` : "No Bonus";
+        html += `<li><strong>${parola}</strong> - ${punteggio} punti ${bonusText}</li>`;
+    });
+    html += `</ol>`;
+
+    // Pulsante per mostrare più parole
+    if (paroleTop.length > 10) {
+        html += `<button id="mostra-piu-parole" class="game-button">Più parole</button>`;
     }
-}
-function rimescolaTessereAutomatico() {
-    // Rimetti solo le tessere attuali nel sacchetto
-    sacchetto.push(...tessereDisponibili);
-    tessereDisponibili = [];
 
-    // NON reintegra gli scarti!
+    html += `<div id="dettaglio-partita" style="margin-top:20px;"></div>`;
 
-    pescaTessere(true); // passiamo un flag per dire che è automatico
-    mostraTessere();
+    document.getElementById("leaderboard-content").innerHTML = html;
+    document.getElementById("leaderboard-modal").style.display = "flex";
+
+    document.querySelectorAll(".classifica-voce").forEach(li => {
+        li.addEventListener("click", () => {
+            const id = li.getAttribute("data-id");
+            const partita = classifica.find(p => p.id == id);
+            if (partita) {
+                mostraDettaglioPartita(partita);
+            }
+        });
+    });
+    // Listener sul pulsante "Più parole"
+    const btnPiuParole = document.getElementById("mostra-piu-parole");
+    if (btnPiuParole) {
+        btnPiuParole.addEventListener("click", () => {
+            let htmlParole = "";
+            paroleTop.slice(0, 50).forEach(({ parola, punteggio, bonus }) => {
+                const bonusText = bonus ? `(${bonus.join(", ")})` : "No Bonus";
+                htmlParole += `<li><strong>${parola}</strong> - ${punteggio} punti ${bonusText}</li>`;
+            });
+            document.getElementById("paroleTop-list").innerHTML = htmlParole;
+            btnPiuParole.style.display = "none"; // Nascondi il bottone dopo il click
+        });
+    }
+
+    document.getElementById("leaderboard-modal").style.display = "flex";
 }
+
+function mostraClassificaFiltrata(difficolta) {
+    const classifica = JSON.parse(localStorage.getItem("classificaPartite")) || [];
+    const filtrata = classifica.filter(p => p.difficolta === difficolta);
+    const contenitore = document.getElementById("classifica-filtrata");
+
+    let html = `<h4>🎯 Difficoltà: ${difficolta}</h4><ol class="classifica-voce">`;
+
+    filtrata.forEach(partita => {
+        html += `<li data-id="${partita.id}" style="cursor:pointer;">
+            <strong>${partita.punteggioTotale}</strong> punti - ${partita.data}
+        </li>`;
+    });
+
+    html += `</ol>`;
+    contenitore.innerHTML = html;
+
+    document.querySelectorAll(".classifica-voce li").forEach(li => {
+        li.addEventListener("click", () => {
+            const id = parseInt(li.getAttribute("data-id"));
+            const partita = classifica.find(p => p.id === id);
+            if (!partita) return;
+            mostraDettaglioPartita(partita);
+        });
+    });
+}
+
+
+    function mostraDettaglioPartita(partita) {
+        const container = document.getElementById("dettaglio-partita");
+        if (!container || !partita) return;
+
+        let html = `
+        <hr><h4>📋 Dettagli partita</h4>
+        <p><strong>Punteggio totale:</strong> ${partita.punteggioTotale}</p>
+        <p><strong>Round superati:</strong> ${partita.roundSuperati}</p>
+        <p><strong>Parola migliore:</strong> ${partita.parolaTop} (${partita.puntiTop} punti)</p>
+        <h5>🧩 Dettagli per round:</h5>
+    `;
+
+        partita.dettagliRound.forEach(r => {
+            html += `<p><strong>Round ${r.round}:</strong></p><ul>`;
+            r.parole.forEach(p => {
+                html += `<li>${p.parola} - ${p.punti} punti</li>`;
+            });
+            html += `</ul>`;
+        });
+
+        container.innerHTML = html;
+    }
 
 function salvaParolaAlta(parola, punteggio) {
     let paroleSalvate = JSON.parse(localStorage.getItem("paroleTop")) || [];
@@ -521,95 +735,59 @@ function salvaParolaAlta(parola, punteggio) {
     localStorage.setItem("paroleTop", JSON.stringify(paroleSalvate));
 }
 
+function rimuoviUltimaLettera() {
+    const lastIndex = parolaCostruita
+        .map((el, idx) => ({ el, idx }))
+        .filter(obj => obj.el !== null)
+        .map(obj => obj.idx)
+        .pop();
+
+    if (lastIndex !== undefined) {
+        parolaCostruita[lastIndex] = null;
+        const slot = document.querySelector(`.slot[data-index='${lastIndex}']`);
+        if (slot) slot.textContent = "";
+        mostraTessere();
+    }
+}
+
+function rimescolaTessere() {
+    if (rimescolaUsato >= rimescolaMax) return;
+
+    sacchetto.push(...tessereDisponibili);
+    sacchetto.push(...scarti);
+    tessereDisponibili = [];
+    scarti = [];
+
+    shuffleArray(sacchetto);
+    pescaTessere();
+    mostraTessere();
+
+    rimescolaUsato++;
+    const counterSpan = document.getElementById("rimescola-counter");
+    if (counterSpan) {
+        counterSpan.textContent = rimescolaMax - rimescolaUsato;
+    }
+
+    if (rimescolaUsato >= rimescolaMax) {
+        document.getElementById("rimescola").disabled = true;
+    }
+}
+function rimescolaTessereAutomatico() {
+    // Rimetti solo le tessere attuali nel sacchetto
+    sacchetto.push(...tessereDisponibili);
+    tessereDisponibili = [];
+
+    // NON reintegra gli scarti!
+
+    pescaTessere(true); // passiamo un flag per dire che è automatico
+    mostraTessere();
+}
+
 
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [array[i], array[j]] = [array[j], array[i]];
-    }
-}
-function salvaPartitaInClassifica(punteggioTotale) {
-    let classifica = JSON.parse(localStorage.getItem("classificaPartite")) || [];
-
-    // Salva la data in formato ISO ma senza tempo (solo YYYY-MM-DD)
-    const dataSoloGiorno = new Date().toISOString().split('T')[0];
-
-    classifica.push({
-        punteggio: punteggioTotale,
-        data: dataSoloGiorno
-    });
-
-    classifica.sort((a, b) => b.punteggio - a.punteggio);
-    classifica = classifica.slice(0, 15);
-
-    localStorage.setItem("classificaPartite", JSON.stringify(classifica));
-}
-
-function mostraClassifica() {
-    const classifica = JSON.parse(localStorage.getItem("classifica")) || [];
-    const paroleTop = JSON.parse(localStorage.getItem("paroleTop")) || [];
-
-    let html = `<h3>📊 Migliori 15 Partite</h3><ol id="classifica-list">`;
-    classifica.forEach(({ punteggioTotale, timestamp, id, roundSuperati }) => {
-        const dataLocale = new Date(timestamp).toLocaleDateString();
-        html += `<li data-id="${id}" class="classifica-voce" style="cursor:pointer;">
-                    <strong>${punteggioTotale}</strong> punti - ${dataLocale} <em>(round: ${roundSuperati})</em>
-                </li>`;
-    });
-    html += `</ol>`;
-
-    html += `<hr><h3>🔠 Top 50 Parole</h3><ol id="paroleTop-list">`;
-    paroleTop.forEach(({ parola, punteggio, bonus }) => {
-        const bonusText = bonus ? `(${bonus.join(", ")})` : "No Bonus";
-        html += `<li><strong>${parola}</strong> - ${punteggio} punti ${bonusText}</li>`;
-    });
-    html += `</ol>`;
-
-    // Dettaglio partita selezionata
-    html += `<div id="dettaglio-partita" style="margin-top:20px;"></div>`;
-
-    document.getElementById("leaderboard-content").innerHTML = html;
-    document.getElementById("leaderboard-modal").style.display = "flex";
-
-    // Aggiungi event listener alle voci cliccabili
-    document.querySelectorAll(".classifica-voce").forEach(li => {
-        li.addEventListener("click", () => {
-            const id = parseInt(li.getAttribute("data-id"));
-            const partita = classifica.find(p => p.id === id);
-            if (!partita) return;
-
-            mostraDettaglioPartita(partita);
-        });
-    });
-}
-
-function mostraDettaglioPartita(partita) {
-    const container = document.getElementById("dettaglio-partita");
-    if (!container || !partita) return;
-
-    let html = `
-        <hr><h4>📋 Dettagli partita</h4>
-        <p><strong>Punteggio totale:</strong> ${partita.punteggioTotale}</p>
-        <p><strong>Round superati:</strong> ${partita.roundSuperati}</p>
-        <p><strong>Parola migliore:</strong> ${partita.parolaTop} (${partita.puntiTop} punti)</p>
-        <h5>🧩 Dettagli per round:</h5>
-    `;
-
-    partita.dettagliRound.forEach(r => {
-        html += `<p><strong>Round ${r.round}:</strong></p><ul>`;
-        r.parole.forEach(p => {
-            html += `<li>${p.parola} - ${p.punti} punti</li>`;
-        });
-        html += `</ul>`;
-    });
-
-    container.innerHTML = html;
-}
-
-function salvaPunteggioMassimo() {
-    const punteggioMaxSalvato = localStorage.getItem("punteggioMassimo") || 0;
-    if (punteggioTotale > punteggioMaxSalvato) {
-        localStorage.setItem("punteggioMassimo", punteggioTotale);
     }
 }
 
@@ -751,6 +929,15 @@ function mostraRiepilogoSacchetto() {
     container.innerHTML = `<div class="sacchetto-riepilogo">${html}</div>`;
 }
 
+function mostraSelezioneDifficolta() {
+    document.getElementById("difficulty-modal").style.display = "flex";
+}
+
+function selezionaDifficolta(livello) {
+    impostaDifficolta(livello); // <-- già definita come da messaggi precedenti
+    document.getElementById("difficulty-modal").style.display = "none";
+    avviaNuovaPartita(); // <-- la tua funzione per inizializzare/ripartire
+}
 
 
 // Delegazione: intercetta click ovunque nel container delle triplette
@@ -809,46 +996,46 @@ document.getElementById('bonus-triplette-container').addEventListener('click', (
 
 document.getElementById("check-word").addEventListener("click", controllaParola);
 document.getElementById("backspace").addEventListener("click", rimuoviUltimaLettera);
-document.getElementById("rimescola").addEventListener("click", rimescolaTessere);
-document.getElementById("restart-game").addEventListener("click", () => {
-    if (confirm("Sei sicuro di voler riavviare la partita?")) {
-        localStorage.removeItem("statoPartita");
-        location.reload();  // oppure chiama la funzione per iniziare una nuova partita
-    }
-});
-document.getElementById("restart-game-header").addEventListener("click", () => {
-    if (confirm("Sei sicuro di voler riavviare la partita?")) {
-        localStorage.removeItem("statoPartita");
-        location.reload();  // o qui chiami la funzione per ricominciare senza ricaricare
-    }
+window.addEventListener("DOMContentLoaded", () => {
+    const rimescolaBtn = document.getElementById("rimescola");
+
+    // Container interno per impaginare meglio numero + icona
+    const container = document.createElement("div");
+    container.style.display = "flex";
+    container.style.flexDirection = "column";
+    container.style.alignItems = "center";
+    container.style.justifyContent = "center";
+
+    // Numero
+    const counterSpan = document.createElement("span");
+    counterSpan.id = "rimescola-counter";
+    counterSpan.textContent = rimescolaMax;
+    counterSpan.style.fontSize = "16px";
+    counterSpan.style.fontWeight = "bold";
+
+    // Freccia
+    const iconSpan = document.createElement("span");
+    iconSpan.classList.add("rimescola-icon");
+    iconSpan.textContent = "⟳";
+    iconSpan.style.fontSize = "18px";
+    iconSpan.style.marginTop = "2px";
+
+    // Aggiungi entrambi
+    container.appendChild(counterSpan);
+    container.appendChild(iconSpan);
+    rimescolaBtn.appendChild(container);
+
+    // Click handler
+    rimescolaBtn.addEventListener("click", rimescolaTessere);
 });
 
-document.getElementById("show-leaderboard").addEventListener("click", () => {
+document.getElementById("restart-game-header").addEventListener("click", mostraSelezioneDifficolta);
+document.getElementById("restart-game").addEventListener("click", () => {
+    document.getElementById("game-over-modal").style.display = "none"; // Chiude la modale di fine partita
+    mostraSelezioneDifficolta(); // Apre la scelta della difficoltà
+});document.getElementById("show-leaderboard").addEventListener("click", () => {
     mostraClassifica(); // mostra la modale separata
 });
-
-document.getElementById("show-leaderboard-summary").addEventListener("click", () => {
-    const classifica = JSON.parse(localStorage.getItem("classificaPartite")) || [];
-    const paroleTop = JSON.parse(localStorage.getItem("paroleTop")) || [];
-
-    let html = `<h3>📊 Migliori 15 Partite</h3><ol>`;
-    classifica.forEach(({ punteggio, data }) => {
-        const dataLocale = new Date(data).toLocaleDateString();
-        html += `<li><strong>${punteggio}</strong> punti - ${dataLocale}</li>`;
-    });
-    html += `</ol>`;
-
-    html += `<hr><h3>🔠 Top 50 Parole</h3><ol>`;
-    paroleTop.forEach(({ parola, punteggio, bonus }) => {
-        const bonusText = bonus ? `(${bonus.join(", ")})` : "";
-        html += `<li><strong>${parola}</strong> - ${punteggio} punti ${bonusText}</li>`;
-    });
-    html += `</ol>`;
-
-    document.getElementById("leaderboard").innerHTML = html;
-    document.getElementById("leaderboard").style.display = "block";
-});
-
 
 document.getElementById("close-leaderboard").addEventListener("click", () => {
     document.getElementById("game-over-modal").style.display = "none";
@@ -865,6 +1052,10 @@ document.getElementById("reset-leaderboard").addEventListener("click", () => {
         mostraClassifica(); // ricarica contenuto vuoto
     }
 });
+document.getElementById("chiudi-difficulty-modal").addEventListener("click", () => {
+    document.getElementById("difficulty-modal").style.display = "none";
+});
+
 
 function stampaSacchetto() {
     console.log("Contenuto sacchetto:");
@@ -890,7 +1081,8 @@ function salvaStatoPartita() {
         scarti,
         rimescolaUsato,
         sogliaProssimoTurnoBonus,
-        turniPerRound
+        turniPerRound,
+        difficolta,
         // aggiungi tutte le variabili che vuoi mantenere
     };
     localStorage.setItem("statoPartita", JSON.stringify(stato));
@@ -918,6 +1110,7 @@ function caricaStatoPartita() {
     rimescolaUsato = stato.rimescolaUsato || 0;
     sogliaProssimoTurnoBonus = stato.sogliaProssimoTurnoBonus || 5000;
     turniPerRound = stato.turniPerRound || 7;
+    difficolta = stato.difficolta || "facile"; // imposta difficoltà di default se non presente
 
     aggiornaInterfacciaDaStato();
 
@@ -928,10 +1121,15 @@ function aggiornaInterfacciaDaStato() {
     mostraSlot();
     mostraTessere();
     aggiornaInfoGioco();
-
-    // Aggiorna contatore rimescoli
-    document.getElementById("rimescola").textContent = rimescolaMax - rimescolaUsato;
-
-    // Disabilita pulsante se esauriti
-    document.getElementById("rimescola").disabled = rimescolaUsato >= rimescolaMax;
+    aggiornaRimescolaBtn();
 }
+
+
+
+window.addEventListener("DOMContentLoaded", () => {
+    const caricata = caricaStatoPartita(); // prova a caricare
+    if (!caricata) {
+        mostraSelezioneDifficolta(); // solo se non c'è partita salvata
+    }
+});
+

@@ -43,10 +43,7 @@
         <!-- Pulsante per controllare la parola -->
         <div class="controls">
             <button id="backspace" title="Annulla ultima lettera">⌫</button>
-            <button id="rimescola" style="display: inline-flex; flex-direction: column; align-items: center;">
-                <span id="rimescola-counter" style="font-size: 0.9em;">3</span>
-                ⟳
-            </button>
+            <button id="rimescola"></button>
             <button id="check-word" title="Controlla parola">></button>
         </div>
 
@@ -59,8 +56,6 @@
             <h2>Partita terminata</h2>
             <div id="summary"></div>
             <button id="restart-game" class="game-button">Riavvia</button>
-            <button id="show-leaderboard-summary" class="game-button orange-button">Classifica</button>
-            <div id="leaderboard" style="display:none; margin-top: 15px;"></div> <!-- contenitore classifica -->
         </div>
     </div>
 
@@ -101,6 +96,24 @@
             <button id="close-leaderboard" class="game-button red-button">Chiudi</button>
         </div>
     </div>
+
+    <div id="difficulty-modal" class="modal" style="display:none;">
+        <div class="modal-content" style="position: relative; padding-top: 40px;">
+            <!-- Pulsante chiudi in alto a destra -->
+            <button id="chiudi-difficulty-modal" class="red-button"
+                    style="position: absolute; top: 10px; right: 10px; width: 30px; height: 30px; padding: 0; font-size: 20px; line-height: 1; border-radius: 50%; outline: none; box-shadow: none;"
+                    aria-label="Chiudi modale">
+                ×
+            </button>
+            <h2>Seleziona la difficoltà</h2>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="game-button" onclick="impostaDifficolta('facile')">Facile</button>
+                <button class="game-button orange-button" onclick="impostaDifficolta('medio')">Medio</button>
+                <button class="game-button red-button" onclick="impostaDifficolta('difficile')">Difficile</button>
+            </div>
+        </div>
+    </div>
+
 
     <script src="scrabble.js"></script>
     <script src="parole.js"></script>

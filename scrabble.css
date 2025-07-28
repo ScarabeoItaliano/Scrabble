@@ -220,6 +220,8 @@ h1 {
         background-color: #8e24aa;
     }
 
+
+
 #check-word {
     background-color: #4CAF50;
     color: white;
@@ -317,6 +319,11 @@ h1 {
     .red-button:hover {
         background-color: #d32f2f; /* rosso scuro */
     }
+
+#chiudi-difficulty-modal:focus {
+    outline: none;
+    box-shadow: none;
+}
 
 #show-leaderboard {
     margin-bottom: 20px; /* spazio sotto il pulsante */
