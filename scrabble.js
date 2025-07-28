@@ -42,6 +42,7 @@ let parolaPunteggioMassimo = {
 };
 let rimescolaUsato = 0;
 const rimescolaMax = 3;
+let numeroBonusTurno = 0;
 let sogliaProssimoTurnoBonus = 5000;
 let turniPerRound = 7; // Numero di turni per round
 let difficolta = "facile";
@@ -73,6 +74,7 @@ function avviaNuovaPartita() {
     lettereUsateQuestoLivello = 0;
     scarti = [];
     rimescolaUsato = 0;
+    numeroBonusTurno = 0;
 
     generaSacchetto();
     mostraSlot();
@@ -402,12 +404,14 @@ function controllaParola() {
 
             punteggioTotale += bonus;
 
-            // 🔁 Ogni 5000 punti totali, aggiungi un turno permanente per i round futuri
             // 🔁 Controlla se hai guadagnato almeno un turno extra in questo round
             const turniPrima = turniPerRound;
+
+            // 🔁 Calcolo cumulativo soglie turno bonus
             while (punteggioTotale >= sogliaProssimoTurnoBonus) {
                 turniPerRound++;
-                sogliaProssimoTurnoBonus += incrementoSogliaTurno;
+                numeroBonusTurno++; // << Assicurati di inizializzarla all'avvio con valore 0
+                sogliaProssimoTurnoBonus += incrementoSogliaTurno * numeroBonusTurno;
             }
 
             const turnoBonusSbloccato = turniPerRound > turniPrima;
@@ -418,11 +422,8 @@ function controllaParola() {
             // Apri la modale bonus con il messaggio aggiornato
             apriBonusModal(bonus, obiettivo, turnoBonusSbloccato);
 
-
             reintegraScarti();
-
             pescaSoloVuotiConControllo();
-
 
             // ⏱ Imposta i turni per il nuovo round in base ai bonus guadagnati
             turniRimasti = turniPerRound;
@@ -437,7 +438,6 @@ function controllaParola() {
             mostraTessere();
             return;
         }
-
 
         if (turniRimasti === 0) {
             risultato.innerHTML += punteggioRound >= obiettivo
@@ -1083,6 +1083,7 @@ function salvaStatoPartita() {
         sogliaProssimoTurnoBonus,
         turniPerRound,
         difficolta,
+        numeroBonusTurno, // aggiungi questa riga se la usi nel gioco
         // aggiungi tutte le variabili che vuoi mantenere
     };
     localStorage.setItem("statoPartita", JSON.stringify(stato));
@@ -1111,7 +1112,7 @@ function caricaStatoPartita() {
     sogliaProssimoTurnoBonus = stato.sogliaProssimoTurnoBonus || 5000;
     turniPerRound = stato.turniPerRound || 7;
     difficolta = stato.difficolta || "facile"; // imposta difficoltà di default se non presente
-
+    numeroBonusTurno = stato.numeroBonusTurno || 0; // aggiungi questa riga se la usi nel gioco
     aggiornaInterfacciaDaStato();
 
     return true;
