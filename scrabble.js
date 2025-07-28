@@ -43,10 +43,12 @@ let parolaPunteggioMassimo = {
 let rimescolaUsato = 0;
 const rimescolaMax = 3;
 let numeroBonusTurno = 0;
-let sogliaProssimoTurnoBonus = 5000;
+let sogliaProssimoTurnoBonus = 50;
 let turniPerRound = 7; // Numero di turni per round
 let difficolta = "facile";
-let incrementoSogliaTurno = 1000;
+let incrementoSogliaTurno = 10;
+let base = 50;
+let soglieBonus;
 
 
 window.addEventListener("load", () => {
@@ -75,6 +77,7 @@ function avviaNuovaPartita() {
     scarti = [];
     rimescolaUsato = 0;
     numeroBonusTurno = 0;
+    soglieBonus = generaSoglieBonus(difficolta);
 
     generaSacchetto();
     mostraSlot();
@@ -89,20 +92,24 @@ function impostaDifficolta(d) {
 
     switch (difficolta) {
         case "medio":
-            sogliaProssimoTurnoBonus = 6000;
-            incrementoSogliaTurno = 1500;
+            base = 60;
+            sogliaProssimoTurnoBonus = 60;
+            incrementoSogliaTurno = 15;
             break;
         case "difficile":
-            sogliaProssimoTurnoBonus = 7000;
-            incrementoSogliaTurno = 2000;
+            base = 70;
+            sogliaProssimoTurnoBonus = 70;
+            incrementoSogliaTurno = 20;
             break;
         case "facile":
         default:
-            sogliaProssimoTurnoBonus = 5000;
-            incrementoSogliaTurno = 1000;
+            base = 50;
+            sogliaProssimoTurnoBonus = 50;
+            incrementoSogliaTurno = 10;
             break;
     }
 
+    numeroBonusTurno = 0; // Reset bonus turno
     // 👇 Nascondi la modale
     document.getElementById("difficulty-modal").style.display = "none";
 
@@ -358,6 +365,52 @@ function calcolaPunteggio() {
 }
 
 
+function calcolaPunteggio() {
+    let sommaLettere = 0;
+    let lettereUsate = 0;
+    let sommaMoltiplicatori = 1;
+
+    parolaCostruita.forEach((elem, i) => {
+        if (!elem) return;
+
+        lettereUsate++;
+
+        const { lettera, indiceTessera } = elem;
+        let punti = 0;
+        const tessera = tessereDisponibili[indiceTessera];
+
+        if (typeof tessera === 'object' && tessera !== null) {
+            punti = LETTERE[lettera]?.punteggio || 0;
+
+            if (tessera.tipoBonus === 'moltiplicatore') {
+                sommaMoltiplicatori += tessera.moltiplicatore - 1 || 1;
+            } else if (tessera.tipoBonus === 'additivo') {
+                punti = tessera.valore || punti;
+            }
+        } else {
+            punti = LETTERE[lettera]?.punteggio || 0;
+        }
+
+        // Bonus posizionali
+        if (i === 3) punti += 2;
+        if (i === 5) punti *= 3;
+        if (i === 7) punti += 5;
+        if (i === 9) sommaMoltiplicatori += 2; // slot 9 raddoppia come bonus
+
+        sommaLettere += punti;
+    });
+
+    // Bonus se tutte le 10 lettere sono usate
+    if (lettereUsate === 10) {
+        sommaMoltiplicatori += 10;
+    }
+
+    const moltiplicatoreTotale = lettereUsate * sommaMoltiplicatori;
+
+    return sommaLettere * moltiplicatoreTotale;
+}
+
+
 function controllaParola() {
     const parola = getParolaDaSlot();
     const risultato = document.getElementById("result");
@@ -404,15 +457,11 @@ function controllaParola() {
 
             punteggioTotale += bonus;
 
-            // 🔁 Controlla se hai guadagnato almeno un turno extra in questo round
             const turniPrima = turniPerRound;
 
-            // 🔁 Calcolo cumulativo soglie turno bonus
-            while (punteggioTotale >= sogliaProssimoTurnoBonus) {
-                turniPerRound++;
-                numeroBonusTurno++; // << Assicurati di inizializzarla all'avvio con valore 0
-                sogliaProssimoTurnoBonus += incrementoSogliaTurno * numeroBonusTurno;
-            }
+            const nuoviTurni = calcolaTurniDaSoglie(punteggioTotale, soglieBonus);
+            turniPerRound = Math.max(turniPerRound, nuoviTurni);
+            sogliaProssimoTurnoBonus = calcolaSogliaProssima(punteggioTotale, soglieBonus);
 
             const turnoBonusSbloccato = turniPerRound > turniPrima;
 
@@ -461,9 +510,8 @@ function controllaParola() {
     }
     salvaStatoPartita();
     console.log(`📦 Sacchetto attuale: ${sacchetto.length} lettere`);
+    logStatoBonus(punteggioTotale, soglieBonus);
 }
-
-
 function mostraRiepilogoPartita() {
     salvaPartitaInClassifica(punteggioTotale, difficolta);
     const puntiTotali = punteggioTotale;
@@ -1083,8 +1131,6 @@ function salvaStatoPartita() {
         sogliaProssimoTurnoBonus,
         turniPerRound,
         difficolta,
-        numeroBonusTurno, // aggiungi questa riga se la usi nel gioco
-        // aggiungi tutte le variabili che vuoi mantenere
     };
     localStorage.setItem("statoPartita", JSON.stringify(stato));
 }
@@ -1112,7 +1158,7 @@ function caricaStatoPartita() {
     sogliaProssimoTurnoBonus = stato.sogliaProssimoTurnoBonus || 5000;
     turniPerRound = stato.turniPerRound || 7;
     difficolta = stato.difficolta || "facile"; // imposta difficoltà di default se non presente
-    numeroBonusTurno = stato.numeroBonusTurno || 0; // aggiungi questa riga se la usi nel gioco
+    soglieBonus = generaSoglieBonus(difficolta); // rigenera le soglie in base alla difficoltà
     aggiornaInterfacciaDaStato();
 
     return true;
@@ -1134,3 +1180,79 @@ window.addEventListener("DOMContentLoaded", () => {
     }
 });
 
+function generaSoglieBonus(difficolta) {
+    let base, incrementoBase, turniIniziali;
+
+    switch (difficolta) {
+        case "medio":
+            base = 60000; incrementoBase = 1500; turniIniziali = 7; break;
+        case "difficile":
+            base = 7000; incrementoBase = 2000; turniIniziali = 7; break;
+        case "facile":
+        default:
+            base = 5000; incrementoBase = 100; turniIniziali = 7; break;
+    }
+
+    let soglie = [];
+    let sogliaCorrente = base;
+    let turni = turniIniziali;
+
+    for (let i = 1; i <= 10; i++) {
+        turni++;
+        soglie.push({ soglia: sogliaCorrente, turni: turni });
+        const incremento = base + (turni - turniIniziali) * incrementoBase;
+        sogliaCorrente += incremento;
+    }
+
+    return soglie;
+}
+
+function calcolaTurniDaSoglie(punteggioTotale, soglie) {
+    let turniAssegnati = soglie[0].turni; // almeno quelli iniziali
+
+    for (let i = 0; i < soglie.length; i++) {
+        if (punteggioTotale >= soglie[i].soglia) {
+            turniAssegnati = soglie[i].turni;
+        } else {
+            break; // appena superi, esci dal ciclo
+        }
+    }
+
+    return turniAssegnati;
+}
+
+function calcolaSogliaProssima(punteggioTotale, soglieBonus) {
+    for (let i = 0; i < soglieBonus.length; i++) {
+        if (punteggioTotale < soglieBonus[i].soglia) {
+            return soglieBonus[i].soglia;
+        }
+    }
+    // Se hai superato tutte le soglie, ritorna l'ultima o un valore alto
+    return soglieBonus[soglieBonus.length - 1].soglia;
+}
+
+function logStatoBonus(punteggioTotale, soglieBonus) {
+    // Trova la soglia "corrente" da superare e i turni corrispondenti
+    let sogliaCorrente = null;
+    let turniCorrenti = null;
+    let sogliaSuccessiva = null;
+    let turniSuccessivi = null;
+
+    for (let i = 0; i < soglieBonus.length; i++) {
+        if (punteggioTotale < soglieBonus[i].soglia) {
+            sogliaSuccessiva = soglieBonus[i].soglia;
+            turniSuccessivi = soglieBonus[i].turni;
+            break;
+        }
+        sogliaCorrente = soglieBonus[i].soglia;
+        turniCorrenti = soglieBonus[i].turni;
+    }
+
+    console.log("=== Stato bonus ===");
+    console.log("Punteggio totale:", punteggioTotale);
+    console.log("Soglia corrente superata:", sogliaCorrente);
+    console.log("Turni attuali associati:", turniCorrenti);
+    console.log("Prossima soglia da superare:", sogliaSuccessiva);
+    console.log("Turni al prossimo bonus:", turniSuccessivi);
+    console.log("==================");
+}
