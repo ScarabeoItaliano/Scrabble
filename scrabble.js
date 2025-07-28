@@ -49,6 +49,7 @@ let difficolta = "facile";
 let incrementoSogliaTurno = 10;
 let base = 50;
 let soglieBonus;
+let livelloBonusCorrente = 0;
 
 
 window.addEventListener("load", () => {
@@ -78,6 +79,7 @@ function avviaNuovaPartita() {
     rimescolaUsato = 0;
     numeroBonusTurno = 0;
     soglieBonus = generaSoglieBonus(difficolta);
+    livelloBonusCorrente = 0;
 
     generaSacchetto();
     mostraSlot();
@@ -459,9 +461,14 @@ function controllaParola() {
 
             const turniPrima = turniPerRound;
 
-            const nuoviTurni = calcolaTurniDaSoglie(punteggioTotale, soglieBonus);
-            turniPerRound = Math.max(turniPerRound, nuoviTurni);
-            sogliaProssimoTurnoBonus = calcolaSogliaProssima(punteggioTotale, soglieBonus);
+            const { turni: nuoviTurni, livello: nuovoLivelloBonus } = calcolaTurniDaSoglie(punteggioTotale, soglieBonus);
+
+            if (nuovoLivelloBonus > livelloBonusCorrente) {
+                // Hai superato una nuova soglia bonus: assegna i turni extra
+                turniPerRound = nuoviTurni;
+                sogliaProssimoTurnoBonus = calcolaSogliaProssima(punteggioTotale, soglieBonus);
+                livelloBonusCorrente = nuovoLivelloBonus;
+            }
 
             const turnoBonusSbloccato = turniPerRound > turniPrima;
 
@@ -1131,6 +1138,7 @@ function salvaStatoPartita() {
         sogliaProssimoTurnoBonus,
         turniPerRound,
         difficolta,
+        livelloBonusCorrente,
     };
     localStorage.setItem("statoPartita", JSON.stringify(stato));
 }
@@ -1159,6 +1167,7 @@ function caricaStatoPartita() {
     turniPerRound = stato.turniPerRound || 7;
     difficolta = stato.difficolta || "facile"; // imposta difficoltà di default se non presente
     soglieBonus = generaSoglieBonus(difficolta); // rigenera le soglie in base alla difficoltà
+    livelloBonusCorrente = stato.livelloBonusCorrente || 0;
     aggiornaInterfacciaDaStato();
 
     return true;
@@ -1209,17 +1218,20 @@ function generaSoglieBonus(difficolta) {
 
 function calcolaTurniDaSoglie(punteggioTotale, soglie) {
     let turniAssegnati = soglie[0].turni; // almeno quelli iniziali
+    let livelloSuperato = 0;
 
     for (let i = 0; i < soglie.length; i++) {
         if (punteggioTotale >= soglie[i].soglia) {
             turniAssegnati = soglie[i].turni;
+            livelloSuperato = i + 1; // i parte da 0, quindi +1 per conteggio livelli
         } else {
-            break; // appena superi, esci dal ciclo
+            break;
         }
     }
 
-    return turniAssegnati;
+    return { turni: turniAssegnati, livello: livelloSuperato };
 }
+
 
 function calcolaSogliaProssima(punteggioTotale, soglieBonus) {
     for (let i = 0; i < soglieBonus.length; i++) {
