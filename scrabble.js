@@ -323,18 +323,25 @@ function getParolaDaSlot() {
 }
 function aggiornaPunteggioLive() {
     const risultato = document.getElementById("result");
-    const parola = getParolaDaSlot();
+    const parola = getParolaDaSlot().toLowerCase().trim();
 
-    if (parola.trim() === "") {
+    if (parola === "") {
         risultato.textContent = "📝 Componi una parola...";
         risultato.className = "info";
         return;
     }
 
     const punteggio = calcolaPunteggio();
-    risultato.innerHTML = `🔍 Parola parziale: <strong>${parola}</strong> - Punteggio attuale: <strong>${punteggio}</strong>`;
-    risultato.className = "info";
+
+    if (parole.includes(parola)) {
+        risultato.innerHTML = `✅ Parola valida: <strong>${parola}</strong> - Punteggio attuale: <strong>${punteggio}</strong>`;
+        risultato.className = "success";
+    } else {
+        risultato.innerHTML = `❌ Parola non valida: <strong>${parola}</strong> - Punteggio ipotetico: <strong>${punteggio}</strong>`;
+        risultato.className = "error";
+    }
 }
+
 
 function calcolaPunteggio() {
     let sommaLettere = 0;
@@ -905,9 +912,15 @@ function mostraRiepilogoSacchetto() {
     const container = document.getElementById("sacchetto-stats");
     if (!container) return;
 
-    // Conta le lettere nel sacchetto
+    const htmlSacchetto = generaRiepilogoLettere(sacchetto, "Sacchetto");
+    const htmlScarti = generaRiepilogoLettere(scarti, "Scarti");
+
+    container.innerHTML = `<div class="sacchetto-riepilogo">${htmlSacchetto}${htmlScarti}</div>`;
+}
+
+function generaRiepilogoLettere(lista, titolo) {
     const conteggio = {};
-    sacchetto.forEach(lettera => {
+    lista.forEach(lettera => {
         const simbolo = typeof lettera === "string" ? lettera : lettera.lettera;
         conteggio[simbolo] = (conteggio[simbolo] || 0) + 1;
     });
@@ -919,7 +932,7 @@ function mostraRiepilogoSacchetto() {
     const sommaVocali = vocali.reduce((acc, v) => acc + (conteggio[v] || 0), 0);
     const sommaConsonanti = consonantiPresenti.reduce((acc, c) => acc + conteggio[c], 0);
 
-    // Funzione per suddividere un array in chunks di max n elementi
+    // Funzione per suddividere array in colonne
     function chunkArray(arr, size) {
         const result = [];
         for (let i = 0; i < arr.length; i += size) {
@@ -928,7 +941,6 @@ function mostraRiepilogoSacchetto() {
         return result;
     }
 
-    // Divido le consonanti in 2 gruppi
     const consonantiChunked = chunkArray(consonantiPresenti.sort(), Math.ceil(consonantiPresenti.length / 2));
 
     let html = `<div class="sacchetto-colonna">`;
@@ -940,7 +952,7 @@ function mostraRiepilogoSacchetto() {
 
     html += `<div class="sacchetto-colonna consonanti-container">`;
     html += `<h4>🧱 Consonanti (${sommaConsonanti})</h4>`;
-    html += `<div class="consonanti-lists">`;  // wrapper per colonne
+    html += `<div class="consonanti-lists">`;
     consonantiChunked.forEach(chunk => {
         html += `<ul>`;
         chunk.forEach(c => {
@@ -951,8 +963,9 @@ function mostraRiepilogoSacchetto() {
     html += `</div>`;
     html += `</div>`;
 
-    container.innerHTML = `<div class="sacchetto-riepilogo">${html}</div>`;
+    return `<div class="riepilogo-blocco"><h3>${titolo}</h3><div class="riepilogo-contenuto">${html}</div></div>`;
 }
+
 
 function mostraSelezioneDifficolta() {
     document.getElementById("difficulty-modal").style.display = "flex";
