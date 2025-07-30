@@ -315,57 +315,26 @@ function inserisciLettera(lettera, indiceTessera, elementoDiv) {
         slot.textContent = lettera;
         elementoDiv.classList.add("usata");
     }
+    aggiornaPunteggioLive();
 }
 
 function getParolaDaSlot() {
     return parolaCostruita.map(obj => obj ? obj.lettera : "").join("");
 }
+function aggiornaPunteggioLive() {
+    const risultato = document.getElementById("result");
+    const parola = getParolaDaSlot();
 
-function calcolaPunteggio() {
-    let sommaLettere = 0;
-    let lettereUsate = 0;
-    let sommaMoltiplicatori = 1;
-
-    parolaCostruita.forEach((elem, i) => {
-        if (!elem) return;
-
-        lettereUsate++;
-
-        const { lettera, indiceTessera } = elem;
-        let punti = 0;
-        const tessera = tessereDisponibili[indiceTessera];
-
-        if (typeof tessera === 'object' && tessera !== null) {
-            punti = LETTERE[lettera]?.punteggio || 0;
-
-            if (tessera.tipoBonus === 'moltiplicatore') {
-                sommaMoltiplicatori += tessera.moltiplicatore - 1 || 1;
-            } else if (tessera.tipoBonus === 'additivo') {
-                punti = tessera.valore || punti;
-            }
-        } else {
-            punti = LETTERE[lettera]?.punteggio || 0;
-        }
-
-        // Bonus posizionali
-        if (i === 3) punti += 2;
-        if (i === 5) punti *= 3;
-        if (i === 7) punti += 5;
-        if (i === 9) sommaMoltiplicatori += 2; // slot 9 raddoppia come bonus
-
-        sommaLettere += punti;
-    });
-
-    // Bonus se tutte le 10 lettere sono usate
-    if (lettereUsate === 10) {
-        sommaMoltiplicatori += 10;
+    if (parola.trim() === "") {
+        risultato.textContent = "📝 Componi una parola...";
+        risultato.className = "info";
+        return;
     }
 
-    const moltiplicatoreTotale = lettereUsate * sommaMoltiplicatori;
-
-    return sommaLettere * moltiplicatoreTotale;
+    const punteggio = calcolaPunteggio();
+    risultato.innerHTML = `🔍 Parola parziale: <strong>${parola}</strong> - Punteggio attuale: <strong>${punteggio}</strong>`;
+    risultato.className = "info";
 }
-
 
 function calcolaPunteggio() {
     let sommaLettere = 0;
@@ -803,6 +772,7 @@ function rimuoviUltimaLettera() {
         if (slot) slot.textContent = "";
         mostraTessere();
     }
+    aggiornaPunteggioLive();
 }
 
 function rimescolaTessere() {
