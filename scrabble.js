@@ -179,7 +179,7 @@ const bonusLettera = {
     3: "+2",
     5: "*3",
     7: "+5",
-    9: "x2"
+    9: "x3"
 };
 
 function mostraSlot() {
@@ -329,7 +329,16 @@ function getParolaDaSlot() {
 }
 function aggiornaPunteggioLive() {
     const risultato = document.getElementById("result");
-    const parola = getParolaDaSlot().toLowerCase().trim();
+    const parola = getParolaDaSlot().trim().toLowerCase(); // Minuscolo per il confronto
+    const parolaMaiuscola = parola.toUpperCase(); // Per la visualizzazione
+
+
+    const { punteggio: punteggioDettagliato, formula } = calcolaPunteggioConDettagli();
+
+   // document.getElementById("punteggio-live").textContent = `Punteggio: ${punteggioDettagliato}`;
+    document.getElementById("formula-live").innerHTML = `
+    <strong>Formula:</strong> (Punti lettere) × Lunghezza parola × (Bonus lettere)<br>
+    ${formula}`;
 
     if (parola === "") {
         risultato.textContent = "📝 Componi una parola...";
@@ -337,22 +346,22 @@ function aggiornaPunteggioLive() {
         return;
     }
 
-    const punteggio = calcolaPunteggio();
+    const punteggio = calcolaPunteggio(); // questa serve solo per validazione visiva
 
     if (parole.includes(parola)) {
-        risultato.innerHTML = `✅ Parola valida: <strong>${parola}</strong> - Punteggio attuale: <strong>${punteggio}</strong>`;
+        risultato.innerHTML = `✅ Parola valida: <strong>${parolaMaiuscola}</strong> - Punteggio: <strong>${punteggio}</strong>`;
         risultato.className = "success";
     } else {
-        risultato.innerHTML = `❌ Parola non valida: <strong>${parola}</strong> - Punteggio ipotetico: <strong>${punteggio}</strong>`;
+        risultato.innerHTML = `❌ Parola non valida: <strong>${parolaMaiuscola}</strong> - Punteggio: <strong>${punteggio}</strong>`;
         risultato.className = "error";
     }
 }
 
-
 function calcolaPunteggio() {
     let sommaLettere = 0;
+    let moltiplicatoreLettere = 0;
     let lettereUsate = 0;
-    let sommaMoltiplicatori = 1;
+    let bonus10Lettere = 1;
 
     parolaCostruita.forEach((elem, i) => {
         if (!elem) return;
@@ -360,38 +369,99 @@ function calcolaPunteggio() {
         lettereUsate++;
 
         const { lettera, indiceTessera } = elem;
-        let punti = 0;
+        let punti = LETTERE[lettera]?.punteggio || 0;
         const tessera = tessereDisponibili[indiceTessera];
 
+        // Applica bonus dalla tessera
         if (typeof tessera === 'object' && tessera !== null) {
-            punti = LETTERE[lettera]?.punteggio || 0;
-
-            if (tessera.tipoBonus === 'moltiplicatore') {
-                sommaMoltiplicatori += tessera.moltiplicatore - 1 || 1;
-            } else if (tessera.tipoBonus === 'additivo') {
+            if (tessera.tipoBonus === 'additivo') {
                 punti = tessera.valore || punti;
+            } else if (tessera.tipoBonus === 'moltiplicatore') {
+                moltiplicatoreLettere += tessera.moltiplicatore;
             }
-        } else {
-            punti = LETTERE[lettera]?.punteggio || 0;
         }
+
+        // Bonus posizionali
+        if (i === 3) punti += 2;     // slot 4
+        if (i === 5) punti *= 3;     // slot 6
+        if (i === 7) punti += 5;     // slot 8
+
+        sommaLettere += punti;
+    });
+
+    // Se nessuna lettera ha bonus moltiplicatore, usiamo 1 come default
+    if (moltiplicatoreLettere === 0) moltiplicatoreLettere = 1;
+
+    // Bonus per parola di 10 lettere
+    if (lettereUsate === 10) bonus10Lettere = 3;
+
+    // Formula finale
+    const punteggioFinale = sommaLettere * lettereUsate * moltiplicatoreLettere * bonus10Lettere;
+    return punteggioFinale;
+}
+
+
+function calcolaPunteggioConDettagli() {
+    let sommaLettere = 0;
+    let lettereUsate = 0;
+    let bonusLettere = [];
+    let bonus10Lettere = 1;
+
+    let dettagliLettere = []; // Per costruire la stringa (5 + 8 ...)
+    let dettagliBonus = [];   // Per costruire la stringa *(x2 + x3 ...)
+
+    parolaCostruita.forEach((elem, i) => {
+        if (!elem) return;
+
+        const { lettera, indiceTessera } = elem;
+        lettereUsate++;
+
+        let punti = LETTERE[lettera]?.punteggio || 0;
+        const tessera = tessereDisponibili[indiceTessera];
 
         // Bonus posizionali
         if (i === 3) punti += 2;
         if (i === 5) punti *= 3;
         if (i === 7) punti += 5;
-        if (i === 9) sommaMoltiplicatori += 3; // slot 9 raddoppia come bonus
 
+        // Bonus da tessere
+        if (typeof tessera === 'object' && tessera !== null) {
+            if (tessera.tipoBonus === 'additivo') {
+                punti = tessera.valore || punti;
+            } else if (tessera.tipoBonus === 'moltiplicatore') {
+                const moltiplicatore = tessera.moltiplicatore || 1;
+                bonusLettere.push(moltiplicatore);
+                dettagliBonus.push(`x${moltiplicatore}`);
+            }
+        }
+
+        dettagliLettere.push(punti);
         sommaLettere += punti;
+
+        // Slot 9 → bonus su tutta la parola
+        if (i === 9) bonus10Lettere = 3;
     });
 
-    // Bonus se tutte le 10 lettere sono usate
-    if (lettereUsate === 10) {
-        sommaMoltiplicatori += 3;
+    // Nessun bonus lettera → default 1
+    const sommaMoltiplicatori = bonusLettere.length > 0
+        ? bonusLettere.reduce((a, b) => a + b, 0)
+        : 1;
+
+    const punteggioFinale = sommaLettere * lettereUsate * sommaMoltiplicatori * bonus10Lettere;
+
+    // Costruzione della stringa formula
+    let formula = `(${dettagliLettere.join(" + ")}) x ${lettereUsate}`;
+    if (dettagliBonus.length > 0) {
+        formula += ` x (${dettagliBonus.join(" + ")})`;
+    }
+    if (bonus10Lettere === 3) {
+        formula += ` x 3`;
     }
 
-    const moltiplicatoreTotale = lettereUsate * sommaMoltiplicatori;
-
-    return sommaLettere * moltiplicatoreTotale;
+    return {
+        punteggio: punteggioFinale,
+        formula: formula
+    };
 }
 
 
@@ -541,8 +611,6 @@ function mostraRiepilogoPartita() {
 
     document.getElementById("summary").innerHTML = riepilogoHTML;
     document.getElementById("game-over-modal").style.display = "flex";
-    document.getElementById("leaderboard").style.display = "none";
-
 }
 function salvaPartitaInClassifica(punteggioTotale, difficolta) {
     let classifica = JSON.parse(localStorage.getItem("classificaPartite")) || [];
