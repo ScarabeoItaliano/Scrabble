@@ -95,7 +95,7 @@ function impostaDifficolta(d) {
     switch (difficolta) {
         case "medio":
             base = 6000;
-            sogliaProssimoTurnoBonus = 5500;
+            sogliaProssimoTurnoBonus = 55000;
             incrementoSogliaTurno = 1500;
             break;
         case "difficile":
@@ -130,13 +130,19 @@ function getIncrementoObiettivo(round) {
 }
 
 function aggiornaInfoGioco() {
-    document.getElementById("score-display").textContent = `Punteggio: ${punteggioTotale}`;
-    document.getElementById("goal-display").textContent = `Punteggio da raggiungere: ${punteggioRound} / ${obiettivo}`;
-    document.getElementById("turns-display").textContent = `Turni: ${turniRimasti}`;
+    const turnsDisplay = document.getElementById("turns-display");
+    const goalDisplay = document.getElementById("goal-display");
+    const scoreDisplay = document.getElementById("score-display");
+    const progressBar = document.getElementById("progress-bar");
+
+    turnsDisplay.textContent = `Turni rimanenti: ${turniRimasti}`;
+    goalDisplay.textContent = `Round ${roundPassati + 1}: ${punteggioRound} / ${obiettivo}`;
+    scoreDisplay.textContent = `Punteggio totale: ${punteggioTotale}`;
 
     const progressPercent = Math.min(100, (punteggioRound / obiettivo) * 100);
-    document.getElementById("progress-bar").style.width = `${progressPercent}%`;
+    progressBar.style.width = `${progressPercent}%`;
 }
+
 
 function aggiornaRimescolaBtn() {
     const rimescolaBtn = document.getElementById("rimescola");
