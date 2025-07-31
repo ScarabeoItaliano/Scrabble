@@ -336,9 +336,9 @@ function aggiornaPunteggioLive() {
     const { punteggio: punteggioDettagliato, formula } = calcolaPunteggioConDettagli();
 
    // document.getElementById("punteggio-live").textContent = `Punteggio: ${punteggioDettagliato}`;
-    document.getElementById("formula-live").innerHTML = `
-    <strong>Formula:</strong> (Punti lettere) × Lunghezza parola × (Bonus lettere)<br>
-    ${formula}`;
+ document.getElementById("formula-live").innerHTML = `
+ ${formula}<br>
+ <strong>Formula:</strong> (Punti lettere) × Lunghezza parola × (Bonus lettere)`;
 
     if (parola === "") {
         risultato.textContent = "📝 Componi una parola...";
