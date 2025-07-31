@@ -379,14 +379,14 @@ function calcolaPunteggio() {
         if (i === 3) punti += 2;
         if (i === 5) punti *= 3;
         if (i === 7) punti += 5;
-        if (i === 9) sommaMoltiplicatori += 2; // slot 9 raddoppia come bonus
+        if (i === 9) sommaMoltiplicatori += 3; // slot 9 raddoppia come bonus
 
         sommaLettere += punti;
     });
 
     // Bonus se tutte le 10 lettere sono usate
     if (lettereUsate === 10) {
-        sommaMoltiplicatori += 10;
+        sommaMoltiplicatori += 3;
     }
 
     const moltiplicatoreTotale = lettereUsate * sommaMoltiplicatori;
