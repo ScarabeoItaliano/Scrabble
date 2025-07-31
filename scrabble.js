@@ -95,12 +95,12 @@ function impostaDifficolta(d) {
     switch (difficolta) {
         case "medio":
             base = 6000;
-            sogliaProssimoTurnoBonus = 6000;
+            sogliaProssimoTurnoBonus = 55000;
             incrementoSogliaTurno = 1500;
             break;
         case "difficile":
             base = 7000;
-            sogliaProssimoTurnoBonus = 7000;
+            sogliaProssimoTurnoBonus = 6000;
             incrementoSogliaTurno = 2000;
             break;
         case "facile":
@@ -1177,9 +1177,9 @@ function generaSoglieBonus(difficolta) {
 
     switch (difficolta) {
         case "medio":
-            base = 6000; incrementoBase = 1500; turniIniziali = 7; break;
+            base = 5500; incrementoBase = 1500; turniIniziali = 7; break;
         case "difficile":
-            base = 7000; incrementoBase = 2000; turniIniziali = 7; break;
+            base = 6000; incrementoBase = 2000; turniIniziali = 7; break;
         case "facile":
         default:
             base = 5000; incrementoBase = 1000; turniIniziali = 7; break;

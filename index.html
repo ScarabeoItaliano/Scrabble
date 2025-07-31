@@ -106,11 +106,53 @@
                 ×
             </button>
             <h2>Seleziona la difficoltà</h2>
-            <div style="display: flex; gap: 10px; margin-top: 20px;">
-                <button class="game-button" onclick="impostaDifficolta('facile')">Facile</button>
-                <button class="game-button orange-button" onclick="impostaDifficolta('medio')">Medio</button>
-                <button class="game-button red-button" onclick="impostaDifficolta('difficile')">Difficile</button>
+            <div class="difficolta-grid">
+                <!-- Facile -->
+                <div class="colonna-difficolta">
+                    <button class="game-button" onclick="impostaDifficolta('facile')">Facile</button>
+                    <div class="descrizione-difficolta">
+                        <p>
+                            <strong>Incremento round:</strong> +15<br>
+                            <em>(100 - 115 - 145 - 190...)</em>
+                        </p>
+                        <p>
+                            <strong>Turno bonus:</strong> 5000 + 1000<br>
+                            <em>(5000 - 11000 - 18000...)</em>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Medio -->
+                <div class="colonna-difficolta">
+                    <button class="game-button orange-button" onclick="impostaDifficolta('medio')">Medio</button>
+                    <div class="descrizione-difficolta">
+                        <p>
+                            <strong>Incremento round:</strong> +20<br>
+                            <em>(100 - 120 - 160 - 220...)</em>
+                        </p>
+                        <p>
+                            <strong>Turno bonus:</strong> 5500 + 1500<br>
+                            <em>(5500 - 12500 - 21000...)</em>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Difficile -->
+                <div class="colonna-difficolta">
+                    <button class="game-button red-button" onclick="impostaDifficolta('difficile')">Difficile</button>
+                    <div class="descrizione-difficolta">
+                        <p>
+                            <strong>Incremento round:</strong> +25<br>
+                            <em>(100 - 125 - 175 - 250...)</em>
+                        </p>
+                        <p>
+                            <strong>Turno bonus:</strong> 6000 + 2000<br>
+                            <em>(6000 - 14000 - 24000...)</em>
+                        </p>
+                    </div>
+                </div>
             </div>
+
         </div>
     </div>
 

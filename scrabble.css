@@ -390,6 +390,31 @@ h1 {
         margin-bottom: 4px;
     }
 
+.difficolta-grid {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+    text-align: center;
+}
+
+.colonna-difficolta {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 200px;
+}
+
+.descrizione-difficolta {
+    font-size: 14px;
+    color: #333;
+    margin-top: 10px;
+}
+
+    .descrizione-difficolta p {
+        margin: 6px 0;
+    }
 
 /* 📱 Responsive */
 @media (max-width: 600px) {
