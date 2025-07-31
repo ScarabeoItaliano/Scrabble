@@ -95,7 +95,7 @@ function impostaDifficolta(d) {
     switch (difficolta) {
         case "medio":
             base = 6000;
-            sogliaProssimoTurnoBonus = 55000;
+            sogliaProssimoTurnoBonus = 5500;
             incrementoSogliaTurno = 1500;
             break;
         case "difficile":
