@@ -50,6 +50,8 @@ let incrementoSogliaTurno = 10;
 let base = 50;
 let soglieBonus;
 let livelloBonusCorrente = 0;
+let parolaSalvata = null;
+let punteggioParolaSalvata = 0;
 
 
 window.addEventListener("load", () => {
@@ -109,6 +111,11 @@ function impostaDifficolta(d) {
             sogliaProssimoTurnoBonus = 5000;
             incrementoSogliaTurno = 1000;
             break;
+        case "estremo":
+            base = 8000;
+            sogliaProssimoTurnoBonus = 7000;
+            incrementoSogliaTurno = 2500;
+            break;
     }
 
     numeroBonusTurno = 0; // Reset bonus turno
@@ -125,6 +132,7 @@ function getIncrementoObiettivo(round) {
     switch (difficolta) {
         case "medio": return round * 20;
         case "difficile": return round * 25;
+        case "estremo": return round * 30;
         default: return round * 15;
     }
 }
@@ -336,9 +344,9 @@ function aggiornaPunteggioLive() {
     const { punteggio: punteggioDettagliato, formula } = calcolaPunteggioConDettagli();
 
    // document.getElementById("punteggio-live").textContent = `Punteggio: ${punteggioDettagliato}`;
- document.getElementById("formula-live").innerHTML = `
- ${formula}<br>
- <strong>Formula:</strong> (Punti lettere) × Lunghezza parola × (Bonus lettere)`;
+    document.getElementById("formula-live").innerHTML = `
+    ${formula}<br>
+    <strong>Formula:</strong> (Punti lettere) × Lunghezza parola × (Bonus lettere)`;
 
     if (parola === "") {
         risultato.textContent = "📝 Componi una parola...";
@@ -666,7 +674,7 @@ function mostraClassifica() {
     }
 
     // Filtro solo partite con difficoltà valida
-    const difficoltaValide = ["facile", "medio", "difficile"];
+    const difficoltaValide = ["facile", "medio", "difficile", "estremo"];
     classifica = classifica.filter(p => difficoltaValide.includes(p.difficolta));
 
     const classificaFacile = classifica
@@ -681,6 +689,11 @@ function mostraClassifica() {
 
     const classificaDifficile = classifica
         .filter(p => p.difficolta === "difficile")
+        .sort((a, b) => b.punteggioTotale - a.punteggioTotale)
+        .slice(0, 10);
+
+    const classificaEstremo = classifica
+        .filter(p => p.difficolta === "estremo")
         .sort((a, b) => b.punteggioTotale - a.punteggioTotale)
         .slice(0, 10);
 
@@ -706,6 +719,16 @@ function mostraClassifica() {
 
     html += `<h3>📊 Classifica Difficile - Top 10</h3><ol id="classifica-difficile">`;
     classificaDifficile.forEach(({ id, punteggioTotale, timestamp, roundSuperati }) => {
+        const dataPartita = timestamp ? new Date(timestamp).toLocaleDateString() : "-";
+        const roundTesto = roundSuperati !== undefined ? `round:${roundSuperati}` : "";
+        html += `<li data-id="${id}" class="classifica-voce" style="cursor:pointer;">
+                <strong>${punteggioTotale}</strong> punti - ${dataPartita} - ${roundTesto}
+             </li>`;
+    });
+    html += `</ol>`;
+
+    html += `<h3>📊 Classifica Estremo - Top 10</h3><ol id="classifica-estremo">`;
+    classificaEstremo.forEach(({ id, punteggioTotale, timestamp, roundSuperati }) => {
         const dataPartita = timestamp ? new Date(timestamp).toLocaleDateString() : "-";
         const roundTesto = roundSuperati !== undefined ? `round:${roundSuperati}` : "";
         html += `<li data-id="${id}" class="classifica-voce" style="cursor:pointer;">
@@ -1168,6 +1191,28 @@ document.getElementById("chiudi-difficulty-modal").addEventListener("click", () 
     document.getElementById("difficulty-modal").style.display = "none";
 });
 
+document.getElementById("save-word").addEventListener("click", () => {
+    const parola = getParolaDaSlot().trim().toLowerCase();
+    if (!parola) {
+        alert("⚠️ Nessuna parola da salvare!");
+        return;
+    }
+
+    const punteggio = calcolaPunteggio();
+    parolaSalvata = parola;
+    punteggioParolaSalvata = punteggio;
+
+    // popup rapido di conferma
+    alert(`✅ Parola salvata: ${parola.toUpperCase()} (${punteggio} punti)`);
+});
+
+document.getElementById("show-saved-word").addEventListener("click", () => {
+    if (!parolaSalvata) {
+        alert("ℹ️ Nessuna parola salvata ancora.");
+    } else {
+        alert(`📌 Parola salvata: ${parolaSalvata.toUpperCase()} (${punteggioParolaSalvata} punti)`);
+    }
+});
 
 function stampaSacchetto() {
     console.log("Contenuto sacchetto:");
@@ -1254,6 +1299,8 @@ function generaSoglieBonus(difficolta) {
             base = 5500; incrementoBase = 1500; turniIniziali = 7; break;
         case "difficile":
             base = 6000; incrementoBase = 2000; turniIniziali = 7; break;
+        case "estremo":
+            base = 7000; incrementoBase = 2500; turniIniziali = 7; break;
         case "facile":
         default:
             base = 5000; incrementoBase = 1000; turniIniziali = 7; break;

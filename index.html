@@ -46,6 +46,11 @@
             <button id="rimescola"></button>
             <button id="check-word" title="Controlla parola">></button>
         </div>
+        <!-- Seconda riga controlli -->
+        <div class="controls second-row">
+            <button id="save-word" class="game-button" title="Salva parola">💾</button>
+            <button id="show-saved-word" class="game-button" title="Mostra parola salvata">👁️</button>
+        </div>
 
         <!-- Area risultato -->
         <div id="result" class="result"></div>
@@ -151,6 +156,21 @@
                         <p>
                             <strong>Turno bonus:</strong> 6000 + 2000<br>
                             <em>(6000 - 14000 - 24000...)</em>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Estremo -->
+                <div class="colonna-difficolta">
+                    <button class="game-button black-button" onclick="impostaDifficolta('estremo')">Estrema</button>
+                    <div class="descrizione-difficolta">
+                        <p>
+                            <strong>Incremento round:</strong> +30<br>
+                            <em>(100 - 130 - 190 - 280...)</em>
+                        </p>
+                        <p>
+                            <strong>Turno bonus:</strong> 7000 + 2500<br>
+                            <em>(7000 - 16500 - 28500...)</em>
                         </p>
                     </div>
                 </div>

@@ -94,15 +94,6 @@ h1 {
         border-radius: 4px;
     }
 
-.bonus {
-    font-size: 3rem; /* ingrandisce il testo */
-    font-weight: bold; /* rende il testo in grassetto */
-    color: black; /* un arancione brillante, puoi cambiare */
-    user-select: none; /* impedisce la selezione del testo */
-    pointer-events: none; /* evita che il testo interferisca con i click */
-    display: inline-block; /* per poter applicare padding/margini */
-}
-
 /* 🎲 Griglia tessere */
 .tiles-grid {
     display: grid;
@@ -158,7 +149,7 @@ h1 {
         opacity: 0.7;
     }
     .tile.bonus-additivo {
-        background: #4CAF50 !important; /* verde pieno */
+        background: #5cd661 !important; /* verde pieno */
         color: white !important;
         border-color: #388E3C !important;
         box-shadow: 0 4px 8px rgba(56, 142, 60, 0.6) !important;
@@ -199,6 +190,7 @@ h1 {
 
 
 /* 🕹️ Pulsanti */
+/* Righe controlli */
 .controls {
     display: flex;
     justify-content: center;
@@ -206,6 +198,11 @@ h1 {
     margin-top: 20px;
     flex-wrap: wrap;
 }
+
+    .controls.second-row {
+        margin-top: 10px; /* distanza dalla prima riga */
+    }
+
 
     .controls button {
         width: 56px;
@@ -217,6 +214,12 @@ h1 {
         cursor: pointer;
         box-shadow: 0 4px 8px rgba(0,0,0,0.25);
         transition: transform 0.2s ease;
+        /* Centratura emoji/simboli */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1; /* elimina lo spazio in eccesso */
+        padding: 0;
     }
 
         .controls button:active {
@@ -241,8 +244,6 @@ h1 {
         background-color: #8e24aa;
     }
 
-
-
 #check-word {
     background-color: #4CAF50;
     color: white;
@@ -251,6 +252,33 @@ h1 {
     #check-word:hover {
         background-color: #388E3C;
     }
+
+/* Specifico per i pulsanti con emoji */
+/* Pulsanti "salva parola" e "mostra parola salvata" */
+#save-word {
+    background-color: #ffcc00;
+    color: white;
+    width: 40px; /* più piccoli */
+    height: 40px;
+    font-size: 18px; /* testo/icona più piccolo */
+}
+
+    #save-word:hover {
+        background-color: #e6b800; /* un po’ più scuro */
+    }
+
+#show-saved-word {
+    background-color: #ffe600;
+    color: white;
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+}
+
+    #show-saved-word:hover {
+        background-color: #d4c200; /* un po’ più scuro */
+    }
+
 
 /* 🎉 Risultato */
 #result {
