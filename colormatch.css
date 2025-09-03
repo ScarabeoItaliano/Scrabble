@@ -3,8 +3,9 @@
     --card: #0b1220;
     --accent: #22c1c3;
     --text: #e6eef6;
-    --cell-size: clamp(36px, 12vw, 64px);
-    --gap: clamp(6px, 3vw, 12px);
+    --cell-size: 48px;
+--palette-size: 40px;
+    --gap: 8px;
     --ui-pad: clamp(8px, 3vw, 16px);
     --menu-gradient: linear-gradient(45deg, #f9f871,#42e695, #7873f5, #ff6ec4 );
     --btn-gradient: linear-gradient(90deg, #f953c6, #b91d73);
@@ -206,6 +207,14 @@ small {
     font-size: 12px;
 }
 
+#playArea {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px; /* distanza tra griglia e palette */
+  width: 100%;
+}
+
 /* griglia centrale */
 #gridWrap {
     display: flex;
@@ -223,19 +232,14 @@ small {
 
 #grid {
     display: grid;
-    width: 100%;
-    height: 100%;
-    aspect-ratio: 1 / 1; /* griglia quadrata */
-    gap: 6px; /* distanza tra le celle */
+    gap: var(--gap);
     border-radius: 8px;
 }
-
 .cell {
-    aspect-ratio: 1 / 1;
-    width: 100%;
-    height: auto;
-    position: relative;
+    width: var(--cell-size);
+    height: var(--cell-size);
     border-radius: 8px;
+    position: relative;
 }
 
     .cell.locked {
@@ -328,18 +332,17 @@ small {
 }
 
 .palette {
-    display: grid;
-    grid-template-columns: repeat(7, minmax(var(--cell-size), 1fr));
-    gap: 6px;
-    background: var(--card);
-    padding: 10px;
-    border-radius: 10px;
-    justify-items: center;
-}
+ display: grid; grid-template-columns: repeat(7, minmax(var(--palette-size),1fr));
+ gap: 6px;
+ background: var(--card);
+ padding: 10px;
+ border-radius: 10px;
+ justify-items: center;
+ }
 
     .palette .peg {
-        width: var(--cell-size);
-        aspect-ratio: 1 / 1;
+        width: var(--palette-size);
+	height: var(--palette-size);
         border-radius: 8px;
         box-shadow: 0 1px 0 rgba(0,0,0,0.4) inset;
         cursor: grab;
@@ -348,7 +351,7 @@ small {
 
         .palette .peg.picked {
             outline: 3px solid rgba(255,255,255,0.12);
-            transform: translateY(-4px);
+            transform: translateY(-6px);
         }
 
         .palette .peg:hover {
@@ -365,28 +368,32 @@ small {
 }
 
 /* ================= DESKTOP (opzionale) ================= */
-@media (min-width: 900px) {
-    #gameArea {
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: flex-start;
-        padding: 16px;
-    }
+@media (min-width: 600px) {
+  :root {
+    --cell-size: 60px;
+  }
 
-    #leftPanel {
-        flex: 1 1 auto;
-        align-items: flex-start;
-    }
+  #gameArea {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 16px;
+  }
 
-    #paletteWrap {
-        position: fixed;
-        bottom: 16px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: auto;
-    }
+  #leftPanel {
+    flex: 1 1 auto;
+    align-items: flex-start;
+  }
 
-    .palette {
-        grid-template-columns: repeat(7, minmax(0, var(--cell-size)));
-    }
+  #paletteWrap {
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: auto;
+  }
+
+  .palette {
+    grid-template-columns: repeat(7, var(--palette-size));
+  }
 }
