@@ -1,107 +1,186 @@
-﻿<!doctype html>
+﻿<!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Color Match</title>
-    <link rel="stylesheet" href="colormatch.css" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gioco Scarabeo</title>
+    <link rel="stylesheet" href="scrabble.css" />
 </head>
 <body>
-    <main id="app">
-        <!-- === MENU PRINCIPALE === -->
-        <section id="mainMenu">
-            <h1>Color Match</h1>
-            <p class="intro">
-                In Color Match il tuo obiettivo è ricostruire la griglia di colori corretta.
-                A seconda della modalità, dovrai spostare le tessere già presenti (Shuffle)
-                oppure trascinare quelle dalla palette per posizionarle al posto giusto (Riempimento).
-                Vinci completando la griglia nel minor tempo possibile!
-            </p>
-
-            <div class="controls">
-                <label>
-                    Modalità:
-                    <select id="mode">
-                        <option value="shuffle">Shuffle</option>
-                        <option value="fill">Fill</option>
-                    </select>
-                    <small>
-                        <b>Shuffle:</b> Scambia le tessere, mettile al posto giusto.<br>
-                        <b>Fill:</b> Inserisci le tessere dalla palette.
-                    </small>
-                </label>
-
-                <label>
-                    Forma:
-                    <select id="shape">
-                        <option value="square">Quadrato</option>
-                        <option value="pyramid">Piramide</option>
-                    </select>
-                    <small>Scegli la forma della griglia di gioco.</small>
-                </label>
-
-                <label>
-                    Dimensione:
-                    <select id="size">
-                        <option value="small">Piccolo</option>
-                        <option value="medium">Medio</option>
-                        <option value="large">Grande</option>
-                    </select>
-                    <small>Determina quanto grande sarà la griglia.</small>
-                </label>
-
-                <label id="playersLabel">
-                    Giocatori:
-                    <select id="players">
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                    </select>
-                    <small>Puoi giocare da solo o sfidare un amico a turni.</small>
-                </label>
-
-                <label id="playerNamesLabel" style="display:none;">
-                    Giocatore 1: <input type="text" id="player1" />
-                    Giocatore 2: <input type="text" id="player2" />
-                    <small>Inserisci i nomi dei giocatori.</small>
-                </label>
-
-                <button id="startBtn" type="button">Start</button>
-            </div>
-        </section>
+    <div class="container">
+        <button id="show-leaderboard" class="game-button orange-button">Classifica</button>
+        <button id="restart-game-header" class="game-button black-button">Riavvia</button>
+        <div id="info-bar" class="info-box">
+            <div id="turns-display">Turni: 7</div>
+            <div id="goal-display">Punteggio da raggiungere: 0 / 100</div>
+            <div id="score-display">Punteggio: 0</div>
+        </div>
+        <div id="progress-container">
+            <div id="progress-bar"></div>
+        </div>
 
 
-        <!-- === AREA DI GIOCO === -->
-        <section id="gameArea" style="display:none;">
-            <div class="game-controls">
-                <button id="backToMenu">Menu</button>
-                <button id="showRanking">Classifica</button>
-                <button id="restartGame">Nuova Partita</button>
-            </div>
+        <!-- Spazi per comporre la parola -->
+        <div id="word-slots" class="word-slots">
+            <div class="slot" data-index="0"></div>
+            <div class="slot" data-index="1"></div>
+            <div class="slot" data-index="2"></div>
+            <div class="slot" data-index="3">+2</div>
+            <div class="slot" data-index="4"></div>
+            <div class="slot" data-index="5">*2</div>
+            <div class="slot" data-index="6"></div>
+            <div class="slot" data-index="7">+5</div>
+            <div class="slot" data-index="8"></div>
+            <div class="slot" data-index="9">x5</div>
+        </div>
 
-            <div id="leftPanel">
-  <div class="info">
-    <div>Timer: <span id="timer">00:00</span></div>
-    <div>Turno: <span id="turn">—</span></div>
-    <div>Punteggio: <span id="score">0 - 0</span></div>
-  </div>
 
-  <div id="playArea">
-    <div id="gridWrap">
-      <div id="grid" class="grid"></div>
+        <!-- Griglia delle 20 tessere pescate -->
+        <div id="tiles-grid" class="tiles-grid">
+            <!-- Le tessere verranno popolate via JS -->
+        </div>
+
+        <!-- Pulsante per controllare la parola -->
+        <div class="controls">
+            <button id="backspace" title="Annulla ultima lettera">⌫</button>
+            <button id="rimescola"></button>
+            <button id="check-word" title="Controlla parola">></button>
+        </div>
+        <!-- Seconda riga controlli -->
+        <div class="controls second-row">
+            <button id="save-word" class="game-button" title="Salva parola">💾</button>
+            <button id="show-saved-word" class="game-button" title="Mostra parola salvata">👁️</button>
+        </div>
+
+        <!-- Area risultato -->
+        <div id="result" class="result"></div>
+        <div id="punteggio-live"></div>
+        <div id="formula-live"></div>
+
     </div>
 
-    <aside id="paletteWrap">
-      <div id="palette" class="palette"></div>
-    </aside>
-  </div>
-</div>
+    <div id="game-over-modal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <h2>Partita terminata</h2>
+            <div id="summary"></div>
+            <button id="restart-game" class="game-button">Riavvia</button>
+        </div>
+    </div>
 
-            <footer>
-                <div id="message"></div>
-            </footer>
-        </section>
-    </main>
+    <!-- Modale bonus obiettivo -->
+    <div id="bonus-modal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <h2>🎉 Obiettivo raggiunto!</h2>
+            <p id="bonus-message"></p>
+            <p>Scegli quali tessere aggiungere al sacchetto?</p>
 
-    <script src="colormatch.js"></script>
+            <div id="bonus-triplette-container" style="display: flex; flex-direction: column; gap: 15px; align-items: center; margin: 20px 0;">
+                <div class="triplette-group" style="display: flex; gap: 10px;">
+                    <div class="bonus-tile-slot tile" style="display: flex; align-items: center; justify-content: center;"></div>
+                    <div class="bonus-tile-slot tile" style="display: flex; align-items: center; justify-content: center;"></div>
+                    <div class="bonus-tile-slot tile" style="display: flex; align-items: center; justify-content: center;"></div>
+                </div>
+                <div class="triplette-group" style="display: flex; gap: 10px;">
+                    <div class="bonus-tile-slot tile" style="display: flex; align-items: center; justify-content: center;"></div>
+                    <div class="bonus-tile-slot tile" style="display: flex; align-items: center; justify-content: center;"></div>
+                    <div class="bonus-tile-slot tile" style="display: flex; align-items: center; justify-content: center;"></div>
+                </div>
+                <div class="triplette-group" style="display: flex; gap: 10px;">
+                    <div class="bonus-tile-slot tile" style="display: flex; align-items: center; justify-content: center;"></div>
+                    <div class="bonus-tile-slot tile" style="display: flex; align-items: center; justify-content: center;"></div>
+                    <div class="bonus-tile-slot tile" style="display: flex; align-items: center; justify-content: center;"></div>
+                </div>
+            </div>
+            <div id="sacchetto-stats" style="margin-top: 16px;"></div>
+        </div>
+    </div>
+
+
+    <div id="leaderboard-modal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <h2>Classifica</h2>
+            <div id="leaderboard-content"></div>
+            <button id="reset-leaderboard" class="game-button black-button">Azzera Classifica</button>
+            <button id="close-leaderboard" class="game-button red-button">Chiudi</button>
+        </div>
+    </div>
+
+    <div id="difficulty-modal" class="modal" style="display:none;">
+        <div class="modal-content" style="position: relative; padding-top: 40px;">
+            <!-- Pulsante chiudi in alto a destra -->
+            <button id="chiudi-difficulty-modal" class="red-button"
+                    style="position: absolute; top: 10px; right: 10px; width: 30px; height: 30px; padding: 0; font-size: 20px; line-height: 1; border-radius: 50%; outline: none; box-shadow: none;"
+                    aria-label="Chiudi modale">
+                ×
+            </button>
+            <h2>Seleziona la difficoltà</h2>
+            <div class="difficolta-grid">
+                <!-- Facile -->
+                <div class="colonna-difficolta">
+                    <button class="game-button" onclick="impostaDifficolta('facile')">Facile</button>
+                    <div class="descrizione-difficolta">
+                        <p>
+                            <strong>Incremento round:</strong> +15<br>
+                            <em>(100 - 115 - 145 - 190...)</em>
+                        </p>
+                        <p>
+                            <strong>Turno bonus:</strong> 5000 + 1000<br>
+                            <em>(5000 - 11000 - 18000...)</em>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Medio -->
+                <div class="colonna-difficolta">
+                    <button class="game-button orange-button" onclick="impostaDifficolta('medio')">Medio</button>
+                    <div class="descrizione-difficolta">
+                        <p>
+                            <strong>Incremento round:</strong> +20<br>
+                            <em>(100 - 120 - 160 - 220...)</em>
+                        </p>
+                        <p>
+                            <strong>Turno bonus:</strong> 5500 + 1500<br>
+                            <em>(5500 - 12500 - 21000...)</em>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Difficile -->
+                <div class="colonna-difficolta">
+                    <button class="game-button red-button" onclick="impostaDifficolta('difficile')">Difficile</button>
+                    <div class="descrizione-difficolta">
+                        <p>
+                            <strong>Incremento round:</strong> +25<br>
+                            <em>(100 - 125 - 175 - 250...)</em>
+                        </p>
+                        <p>
+                            <strong>Turno bonus:</strong> 6000 + 2000<br>
+                            <em>(6000 - 14000 - 24000...)</em>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Estremo -->
+                <div class="colonna-difficolta">
+                    <button class="game-button black-button" onclick="impostaDifficolta('estremo')">Estrema</button>
+                    <div class="descrizione-difficolta">
+                        <p>
+                            <strong>Incremento round:</strong> +30<br>
+                            <em>(100 - 130 - 190 - 280...)</em>
+                        </p>
+                        <p>
+                            <strong>Turno bonus:</strong> 7000 + 2500<br>
+                            <em>(7000 - 16500 - 28500...)</em>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+    <script src="scrabble.js"></script>
+    <script src="parole.js"></script>
 </body>
 </html>
