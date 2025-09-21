@@ -95,26 +95,26 @@ function impostaDifficolta(d) {
     difficolta = d;
 
     switch (difficolta) {
-        case "medio":
+        case "facile":
             base = 6000;
-            sogliaProssimoTurnoBonus = 5500;
+            sogliaProssimoTurnoBonus = 6000;
             incrementoSogliaTurno = 1500;
             break;
-        case "difficile":
+        case "medio":
             base = 7000;
-            sogliaProssimoTurnoBonus = 6000;
+            sogliaProssimoTurnoBonus = 7000;
             incrementoSogliaTurno = 2000;
             break;
-        case "facile":
+        case "difficile":
         default:
-            base = 5000;
-            sogliaProssimoTurnoBonus = 5000;
-            incrementoSogliaTurno = 1000;
+            base = 8000;
+            sogliaProssimoTurnoBonus = 8000;
+            incrementoSogliaTurno = 2500;
             break;
         case "estremo":
-            base = 8000;
-            sogliaProssimoTurnoBonus = 7000;
-            incrementoSogliaTurno = 2500;
+            base = 10000;
+            sogliaProssimoTurnoBonus = 10000;
+            incrementoSogliaTurno = 3000;
             break;
     }
 
@@ -130,10 +130,10 @@ function impostaDifficolta(d) {
 
 function getIncrementoObiettivo(round) {
     switch (difficolta) {
-        case "medio": return round * 20;
-        case "difficile": return round * 25;
-        case "estremo": return round * 30;
-        default: return round * 15;
+        case "medio": return round * 25;
+        case "difficile": return round * 30;
+        case "estremo": return round * 50;
+        default: return round * 20;
     }
 }
 
@@ -1295,15 +1295,16 @@ function generaSoglieBonus(difficolta) {
     let base, incrementoBase, turniIniziali;
 
     switch (difficolta) {
-        case "medio":
-            base = 5500; incrementoBase = 1500; turniIniziali = 7; break;
-        case "difficile":
-            base = 6000; incrementoBase = 2000; turniIniziali = 7; break;
-        case "estremo":
-            base = 7000; incrementoBase = 2500; turniIniziali = 7; break;
         case "facile":
+            base = 6000; incrementoBase = 2000; turniIniziali = 7; break;
+        case "medio":
+            base = 7000; incrementoBase = 2500; turniIniziali = 7; break;
+        case "difficile":
+            base = 10000; incrementoBase = 3000; turniIniziali = 7; break;
+        case "estremo":
+            base = 5500; incrementoBase = 1500; turniIniziali = 7; break;
         default:
-            base = 5000; incrementoBase = 1000; turniIniziali = 7; break;
+            base = 6000; incrementoBase = 2000; turniIniziali = 7; break; // default facile
     }
 
     let soglie = [];
