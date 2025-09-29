@@ -1296,15 +1296,15 @@ function generaSoglieBonus(difficolta) {
 
     switch (difficolta) {
         case "facile":
-            base = 6000; incrementoBase = 2000; turniIniziali = 7; break;
+            base = 6000; incrementoBase = 1500; turniIniziali = 7; break;
         case "medio":
-            base = 7000; incrementoBase = 2500; turniIniziali = 7; break;
+            base = 7000; incrementoBase = 2000; turniIniziali = 7; break;
         case "difficile":
-            base = 10000; incrementoBase = 3000; turniIniziali = 7; break;
+            base = 8000; incrementoBase = 2500; turniIniziali = 7; break;
         case "estremo":
-            base = 5500; incrementoBase = 1500; turniIniziali = 7; break;
+            base = 10000; incrementoBase = 3000; turniIniziali = 7; break;
         default:
-            base = 6000; incrementoBase = 2000; turniIniziali = 7; break; // default facile
+            base = 6000; incrementoBase = 1500; turniIniziali = 7; break; // default facile
     }
 
     let soglie = [];
